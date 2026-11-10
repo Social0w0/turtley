@@ -19,7 +19,16 @@
 | 📚 e-도서관 | 그림카드·영상·워크북 등 시청각 학습 자료 (무료/유료) |
 | 🔐 회원 | 학부모 / 튜터 역할 분리 가입, 토큰 기반 인증 (scrypt 해시) |
 
-## 빠르게 실행하기
+## GitHub에서 바로 실행 (Codespaces)
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/Social0w0/turtley?quickstart=1)
+
+1. 위 버튼 → **Create codespace**
+2. 1~2분 뒤 자동으로 `npm install` → `npm start` 가 실행되고, 3000번 포트 미리보기가 열립니다.
+3. 다른 사람에게 보여주려면 하단 **PORTS** 탭 → 3000 우클릭 → **Port Visibility → Public** 후 주소 공유.
+4. 다 쓰면 [github.com/codespaces](https://github.com/codespaces)에서 **Stop** (무료 사용 시간 절약).
+
+## 로컬에서 실행하기
 
 ```bash
 git clone https://github.com/<your-id>/turtley.git
