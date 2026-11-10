@@ -31,7 +31,7 @@ function createApp(db) {
       db.insert('tutors', {
         userId: user.id, name, intro: '안녕하세요! 천천히, 함께 가는 튜터입니다.',
         subjects: ['국어'], regions: [user.region], online: true, career: '', rating: 0, reviewCount: 0,
-        tags: ['신규 튜터'], avatar: '🐢',
+        tags: [],
       });
     }
     const token = crypto.randomBytes(24).toString('hex');
@@ -238,6 +238,10 @@ function createApp(db) {
 
   // 프론트엔드 (정적 SPA)
   const pub = path.join(__dirname, '..', 'public');
+  // 웹폰트는 npm 패키지에서 바로 서빙 (CDN 의존 없음)
+  const fontDir = (pkg, sub = '') => path.join(path.dirname(require.resolve(pkg + '/package.json')), sub);
+  app.use('/fonts/pretendard', express.static(fontDir('pretendard', 'dist/web/variable'), { maxAge: '30d' }));
+  app.use('/fonts/gowun', express.static(fontDir('@fontsource/gowun-dodum'), { maxAge: '30d' }));
   app.use(express.static(pub));
   app.get(/^\/(?!api).*/, (_req, res) => res.sendFile(path.join(pub, 'index.html')));
 
