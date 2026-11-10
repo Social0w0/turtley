@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+  <!-- 터틀리 마스코트(단순화 버전): 파란 가방을 멘 초록 거북이 -->
+  <g stroke="#3f6b26" stroke-width="2.5" stroke-linejoin="round">
+    <ellipse cx="30" cy="42" rx="11" ry="9" fill="#a6d955"/>
+    <ellipse cx="90" cy="42" rx="11" ry="9" fill="#a6d955"/>
+    <ellipse cx="32" cy="92" rx="11" ry="9" fill="#a6d955"/>
+    <ellipse cx="88" cy="92" rx="11" ry="9" fill="#a6d955"/>
+    <ellipse cx="60" cy="22" rx="15" ry="14" fill="#a6d955"/>
+    <ellipse cx="60" cy="68" rx="34" ry="36" fill="#b9e66a"/>
+    <rect x="40" y="48" width="40" height="44" rx="12" fill="#7fb3e8"/>
+    <path d="M46 50 Q60 30 74 50" fill="none" stroke="#5a8fcf" stroke-width="5"/>
+    <rect x="47" y="72" width="26" height="14" rx="5" fill="#3f7fd0"/>
+  </g>
+  <circle cx="54" cy="19" r="2.6" fill="#1d2b12"/>
+  <circle cx="66" cy="19" r="2.6" fill="#1d2b12"/>
+  <path d="M55 27 Q60 30 65 27" fill="none" stroke="#1d2b12" stroke-width="2" stroke-linecap="round"/>
+</svg>

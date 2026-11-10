@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>터틀리 · 느린학습자 맞춤형 1:1 교육 플랫폼</title>
+  <meta name="theme-color" content="#568a35" />
+  <link rel="icon" href="/turtle.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="stage">
+    <aside class="pitch">
+      <img src="/turtle.svg" alt="" class="pitch-mascot" />
+      <h1>터틀리</h1>
+      <p class="pitch-sub">느린학습자 맞춤형 1:1 교육 플랫폼</p>
+      <ul>
+        <li><b>1:1 튜터 직접 선택</b> 경력단절여성 튜터를 지역·과목·비대면 여부로 골라요</li>
+        <li><b>안전거래</b> 수업료는 플랫폼이 보관하고, 수업 완료 후 튜터에게 80% 정산</li>
+        <li><b>전국 연합 커뮤니티</b> 지역에 묶이지 않는 느린학습자 부모 커뮤니티</li>
+        <li><b>e-도서관</b> 직관적인 시청각 학습 자료</li>
+      </ul>
+      <p class="pitch-demo">데모 계정 · 비밀번호 <code>demo1234</code><br/>
+        학부모 <code>parent@turtley.dev</code><br/>튜터 <code>tutor@turtley.dev</code></p>
+    </aside>
+
+    <div class="phone">
+      <header class="topbar">
+        <button class="icon-btn" id="backBtn" aria-label="뒤로" style="visibility:hidden">‹</button>
+        <span class="brand">터틀리</span>
+        <button class="icon-btn" id="menuBtn" aria-label="내 정보">⋮</button>
+      </header>
+      <main id="view" class="view" tabindex="-1"></main>
+      <nav class="tabbar" aria-label="메인 메뉴">
+        <a href="#/" data-tab="home"><span>🏠</span>홈</a>
+        <a href="#/tutors" data-tab="tutors"><span>🧑‍🏫</span>튜터찾기</a>
+        <a href="#/community" data-tab="community"><span>💬</span>커뮤니티</a>
+        <a href="#/library" data-tab="library"><span>📚</span>e-도서관</a>
+        <a href="#/me" data-tab="me"><span>🐢</span>마이</a>
+      </nav>
+      <div id="sheet" class="sheet" hidden>
+        <div class="sheet-backdrop" data-close></div>
+        <div class="sheet-panel" role="dialog" aria-modal="true"><div class="sheet-grip"></div><div id="sheetBody"></div></div>
+      </div>
+      <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+  <script src="/app.js"></script>
+</body>
+</html>
