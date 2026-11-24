@@ -233,6 +233,7 @@ async function sync() {
   if (UI.cf.level === null && S.kids[0]?.level) UI.cf.level = S.kids[0].level;
 }
 const me = () => S.user;
+const unreadAll = () => S.threads.reduce((n, t) => n + (t.unread || 0), 0);
 const role = () => (S.user ? S.user.role : 'guest');
 const GUEST_KID = { id: null, name: '우리 아이', grade: '', region: '서울', dist: '', traits: [], subj: [] };
 const kid = () => S.kids[0] || GUEST_KID;
@@ -447,7 +448,8 @@ function go(h) { if (backPending) { goQueue = h; return; } if (location.hash.sli
 let curRoute = '', firstRender = true, poll = null;
 function tabsHTML(r) {
   const set = role() === 'tutor' ? TABS.tutor : TABS.guest; const active = TABOF[r] || r;
-  return set.map(([id, n, i]) => `<button data-go="${id}" ${active === id ? 'aria-current="page"' : ''}>${ic(i, 26, active === id ? 2.1 : 1.7)}<span>${n}</span></button>`).join('');
+  const un = unreadAll();
+  return set.map(([id, n, i]) => `<button data-go="${id}" ${active === id ? 'aria-current="page"' : ''}${id === 'my' && un ? ` aria-label="${n}, 안 읽은 메시지 ${un}개"` : ''}><span class="tbi">${ic(i, 26, active === id ? 2.1 : 1.7)}${id === 'my' && un ? '<span class="tdot"></span>' : ''}</span><span>${n}</span></button>`).join('');
 }
 function render() {
   const p = parse(), r = p.r, need = NEED[r]; stopSpeak(); clearInterval(poll);
@@ -690,7 +692,7 @@ function vHome() {
   let nextCard;
   if (bk) { const t = T[bk.tutorId] || { name: bk.tutorName, subj: ['read'] }; const done = doneOf(bk); const nd = bk.slots.map(s => nextDate(s)).sort((a, b) => a - b)[0]; nextCard = `<a class="next" href="#lessons"><div><p class="k">다음 수업</p><b>${fmtD(nd)} ${fmtH(nd.getHours())}</b><span class="m">${esc(t.name)} 선생님 · ${SUBJ[t.subj[0]].name} · ${MODES[bk.mode].n}</span><div class="prog" aria-label="이번 달 ${done}회 진행"><i style="width:${done / bk.pkg * 100}%"></i></div><span class="m">이번 달 ${done} / ${bk.pkg}회</span></div><img src="${TURTLE}" alt=""></a>`; }
   else nextCard = `<a class="next" href="#tutors"><div><p class="k">처음이라면</p><b>첫 상담은 무료예요</b><span class="m">아이 속도를 아는 선생님과 15분 이야기해 보세요</span></div><img src="${TURTLE}" alt=""></a>`;
-  const unread = S.threads.length > 0;
+  const unread = unreadAll() > 0;
   return { title: '홈', html: `
  <div class="hello"><img class="wm" src="${WORDMARK}" alt="터틀리"><div style="display:flex"><button class="ib plain" data-go="${u ? 'chat' : 'login'}" aria-label="채팅">${ic('chat', 24)}${unread ? '<span class="dot"></span>' : ''}</button><button class="ib plain" id="bell" aria-label="알림">${ic('bell', 24)}</button></div></div>
  <div class="lt"><p class="hand cheer">오늘도 우리는 한 걸음!</p><h1>${parent && S.kids[0] ? `${esc(k.name)}이에게 맞는<br>선생님을 찾아요` : '느린학습자 아이에게<br>꼭 맞는 1:1 선생님'}</h1></div>
@@ -1106,9 +1108,9 @@ function vLessons() {
 /* ===================== 채팅 ===================== */
 function vChat() {
   return { title: '채팅', html: `${backBar('채팅', 'my')}<div class="sec" style="margin-top:8px">${S.threads.length ? `<div class="list">${S.threads.map(th => { const last = [...th.msgs].reverse().find(m => !m.sys) || th.msgs[0] || { t: '' };
-    return `<a class="row" href="#room-${th.id}" style="min-height:72px">${th.center ? `<span class="av sm" style="background:var(--sky)">${ic('shield', 18)}</span>` : av({ name: th.name, hue: th.hue }, 'sm')}<span class="rt"><b style="font-weight:600">${esc(th.name)}</b><small style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(last.t)}</small></span><span class="rv" style="font-size:12.5px">${last.at ? atTxt(last.at) : ''}</span></a>`; }).join('')}</div>` : `<div class="empty"><img src="${TURTLE}" alt=""><b>아직 대화가 없어요</b><p>선생님 프로필에서 상담하기를 눌러 보세요.</p></div>`}
-  <button class="btn block ghost" id="ctr" style="margin-top:12px">${ic('shield', 20)}터틀리 안심센터에 문의</button></div>
- <p class="cap" style="padding:0 20px">전화번호는 서로 공개되지 않아요.</p>`, mount() { $('#ctr').onclick = () => openThread(null, ''); } };
+    return `<a class="row" href="#room-${th.id}" style="min-height:72px">${th.center ? `<span class="av sm" style="background:var(--sky)">${ic('shield', 18)}</span>` : av({ name: th.name, hue: th.hue }, 'sm')}<span class="rt"><b style="font-weight:${th.unread ? 800 : 600}">${esc(th.name)}</b><small style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(last.t)}</small></span><span class="rv" style="font-size:12.5px;display:flex;flex-direction:column;align-items:flex-end;gap:4px">${last.at ? atTxt(last.at) : ''}${th.unread ? `<span class="unb" aria-label="안 읽은 메시지 ${th.unread}개">${th.unread > 99 ? '99+' : th.unread}</span>` : ''}</span></a>`; }).join('')}</div>` : `<div class="empty"><img src="${TURTLE}" alt=""><b>아직 대화가 없어요</b><p>선생님 프로필에서 상담하기를 눌러 보세요.</p></div>`}
+  ${role() === 'admin' ? '<p class="cap" style="margin-top:12px">안심센터 문의에는 관리자 계정으로 답해요.</p>' : `<button class="btn block ghost" id="ctr" style="margin-top:12px">${ic('shield', 20)}터틀리 안심센터에 문의</button>`}</div>
+ <p class="cap" style="padding:0 20px">전화번호는 서로 공개되지 않아요. 새 메시지는 자동으로 들어와요.</p>`, mount() { const c = $('#ctr'); if (c) c.onclick = () => openThread(null, ''); } };
 }
 function vRoom(p) {
   const th0 = S.threads.find(x => x.id === p.id); if (!th0) return { title: '채팅', html: `${backBar('채팅', 'chat')}<div class="empty"><b>대화를 찾을 수 없어요</b></div>` };
@@ -1118,15 +1120,47 @@ function vRoom(p) {
  <div class="quick">${quick.map(q => `<button class="chip" data-q="${q}">${q}</button>`).join('')}</div>
  <form class="compose" id="mf"><textarea id="mt" rows="1" placeholder="메시지" aria-label="메시지"></textarea><button class="send" aria-label="보내기">${ic('send', 20)}</button></form>`,
   mount() {
-    let th = th0, n = -1;
-    const draw = () => { if (n === th.msgs.length) return; n = th.msgs.length; $('#msgs').innerHTML = th.msgs.map(m => m.sys ? `<div class="bub sys">${esc(m.t)}</div>` : `<div class="bub ${m.me ? 'me' : 'you'}" data-say>${esc(m.t)}</div><span class="tm-s ${m.me ? '' : 'l'}">${atTxt(m.at)}</span>`).join(''); setTimeout(() => view.scrollTop = view.scrollHeight, 10); };
-    draw();
-    const send = run(async v => { v = v.trim(); if (!v) return; $('#mt').value = ''; th = (await api(`/threads/${th.id}/messages`, { method: 'POST', body: { text: v } })).thread; draw(); });
+    let th = th0, sig = '', pending = [];
+    const keep = t => { th = t; const i = S.threads.findIndex(x => x.id === t.id); if (i >= 0) S.threads[i] = { ...t, unread: 0 }; };
+    const draw = () => {
+      const s2 = th.msgs.length + '|' + pending.length; if (s2 === sig) return; sig = s2;
+      const box = $('#msgs'); if (!box) return; const atEnd = view.scrollHeight - view.scrollTop - view.clientHeight < 80;
+      box.innerHTML = th.msgs.map(m => m.sys ? `<div class="bub sys">${esc(m.t)}</div>` : `<div class="bub ${m.me ? 'me' : 'you'}" data-say>${esc(m.t)}</div><span class="tm-s ${m.me ? '' : 'l'}">${atTxt(m.at)}</span>`).join('')
+        + pending.map(t => `<div class="bub me sending" data-say>${esc(t)}</div><span class="tm-s">보내는 중…</span>`).join('');
+      if (atEnd || pending.length) setTimeout(() => view.scrollTop = view.scrollHeight, 10);
+    };
+    th.unread = 0; draw(); setTimeout(() => view.scrollTop = view.scrollHeight, 10);
+    api(`/threads/${th.id}`).then(r => { keep(r.thread); draw(); }).catch(() => {}); // 들어오면 읽음 처리
+    const send = async v => {
+      v = v.trim(); if (!v) return; $('#mt').value = ''; $('#mt').style.height = ''; pending.push(v); draw();
+      try { const r = await api(`/threads/${th.id}/messages`, { method: 'POST', body: { text: v } }); pending.splice(pending.indexOf(v), 1); keep(r.thread); }
+      catch (e) { pending.splice(pending.indexOf(v), 1); $('#mt').value = v; toast(e.message); }
+      sig = ''; draw();
+    };
     $('#mf').onsubmit = e => { e.preventDefault(); send($('#mt').value); };
     $('#mt').onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); send($('#mt').value); } };
+    $('#mt').oninput = e => { const t = e.target; t.style.height = ''; t.style.height = Math.min(120, t.scrollHeight) + 'px'; };
     $$('[data-q]').forEach(b => b.onclick = () => send(b.dataset.q));
-    poll = setInterval(async () => { if (curRoute !== 'room') return clearInterval(poll); try { th = (await api(`/threads/${th.id}`)).thread; draw(); } catch { /* ignore */ } }, 4000);
+    poll = setInterval(async () => { if (curRoute !== 'room') return clearInterval(poll); if (document.hidden) return; try { keep((await api(`/threads/${th.id}`)).thread); draw(); } catch { /* 잠깐 끊겨도 다음에 다시 */ } }, 2000);
   } };
+}
+
+// 어느 화면에 있든 새 메시지를 확인해서 점·목록·알림을 갱신해요
+let inboxSig = '';
+const sigOf = ts => ts.map(t => t.id + ':' + t.msgs.length + ':' + (t.unread || 0)).join(',');
+async function checkInbox() {
+  if (!S.user || document.hidden || curRoute === 'room') return;
+  let ts; try { ts = (await api('/threads')).threads; } catch { return; }
+  const sig = sigOf(ts); if (!inboxSig) { inboxSig = sig; } if (sig === inboxSig) return;
+  const before = Object.fromEntries(S.threads.map(t => [t.id, t.msgs.length]));
+  inboxSig = sig; S.threads = ts;
+  const fresh = ts.find(t => t.unread && t.msgs.length > (before[t.id] || 0) && !t.msgs.at(-1).me && !t.msgs.at(-1).sys);
+  if (fresh) toast(`${fresh.name}: ${fresh.msgs.at(-1).t.slice(0, 40)}`);
+  if (curRoute === 'chat' && !$('.sheet', layer)) { const y = view.scrollTop; render(); view.scrollTop = y; return; }
+  // 다른 화면은 입력 중일 수 있으니 다시 그리지 않고 점만 바꿔요
+  const has = unreadAll() > 0;
+  $$('.ib[data-go="chat"]', view).forEach(b => { const d = $('.dot', b); if (has && !d) b.insertAdjacentHTML('beforeend', '<span class="dot"></span>'); if (!has && d) d.remove(); });
+  if (tabbar && !tabbar.hidden) tabbar.innerHTML = tabsHTML(curRoute);
 }
 
 /* ===================== 쉬운 화면 ===================== */
@@ -1154,7 +1188,7 @@ function vTHome() {
   const fri = new Date(); fri.setDate(fri.getDate() + ((5 - fri.getDay() + 7) % 7 || 7));
   const avail = new Set(t.slots);
   const pendingTutor = t.status !== 'approved';
-  return { title: '선생님 홈', html: `<div class="hello"><img class="wm" src="${WORDMARK}" alt="터틀리"><div style="display:flex"><button class="ib plain" data-go="chat" aria-label="채팅">${ic('chat', 24)}${S.threads.length ? '<span class="dot"></span>' : ''}</button></div></div>
+  return { title: '선생님 홈', html: `<div class="hello"><img class="wm" src="${WORDMARK}" alt="터틀리"><div style="display:flex"><button class="ib plain" data-go="chat" aria-label="채팅">${ic('chat', 24)}${unreadAll() ? '<span class="dot"></span>' : ''}</button></div></div>
  <div class="lt"><p class="hand cheer">오늘도 한 걸음, 선생님!</p><h1>${esc(t.name)} 선생님,<br>${upcoming.length ? `다가오는 수업 ${upcoming.length}개예요` : '아직 예약된 수업이 없어요'}</h1></div>
  ${pendingTutor ? `<div class="sec"><div class="notice">${ic('info', 20)}<span>안심 인증 서류 4종을 확인하고 있어요. 승인되면 튜터 찾기 목록에 공개되고 신청서에 지원할 수 있어요.</span></div></div>` : ''}
  <div class="sec"><div class="calc"><p style="margin:0;font-size:14px;color:var(--muted)">이번 달 예상 정산</p><div class="big">${won(e.expected)}</div><div class="rowc"><span>완료 ${e.done}회 · 남은 ${e.planned}회 × ${won(t.price)} × 80%</span></div><div class="split" style="margin-top:12px"><i class="a" style="width:${e.done / ses * 100}%">완료 ${e.done}</i><i class="b" style="width:${e.planned / ses * 100}%">예정 ${e.planned}</i></div><p class="cap" style="padding:0">다음 정산일 ${fmtD(fri)} · 보호자가 확인한 회차만${e.pending ? ` · 확인 대기 ${e.pending}회` : ''}</p></div></div>
@@ -1312,6 +1346,8 @@ async function boot() {
   applyA11y(); fit();
   try { await sync(); } catch (e) { view.innerHTML = `<div class="empty" style="padding-top:120px"><img src="${TURTLE}" alt=""><b>서버에 연결하지 못했어요</b><p>${esc(e.message)}</p><button class="btn sm" onclick="location.reload()" style="margin-top:12px">다시 시도</button></div>`; return; }
   render();
+  inboxSig = sigOf(S.threads); setInterval(checkInbox, 3000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkInbox(); });
 }
 boot();
 })();

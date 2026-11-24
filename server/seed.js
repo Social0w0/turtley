@@ -143,7 +143,9 @@ function seed(db, { hash } = {}) {
   ] });
   db.insert('threads', { id: 'c2', a: parent.id, b: null, tutorId: null, msgs: [{ from: 'center', t: '수업료는 수업 완료 확인 후 선생님께 정산돼요. 문제가 생기면 이 채팅으로 바로 알려주세요.', at: '2026-11-17T01:00:00.000Z' }] });
   db.insert('threads', { id: 'c3', a: parent2.id, b: t1user.id, tutorId: 't1', msgs: [{ from: 'sys', t: '연락처는 서로 공개되지 않아요. 대화는 터틀리 안에서만 이어져요.', at: '2026-11-02T09:00:00.000Z' }, { from: parent2.id, t: '도윤이가 지난 수업 재밌었대요. 이번 주도 잘 부탁드려요.', at: '2026-11-21T10:00:00.000Z' }] });
-  void c1;
+  // 읽음 표시: 모두 읽은 상태로 시작하되, 하늘이 보호자에게는 지은 선생님의 마지막 메시지 1개가 안 읽힘으로 보여요
+  db.all('threads').forEach(th => { const last = th.msgs.at(-1).at; db.update('threads', th.id, { seen: { [th.a]: last, ...(th.b ? { [th.b]: last } : { center: last }) } }); });
+  db.update('threads', c1.id, { seen: { [parent.id]: '2026-11-20T08:20:00.000Z', [t1user.id]: '2026-11-20T08:24:00.000Z' } });
 
   // 수업 신청서 (보호자 익명)
   REQUESTS.forEach((r, i) => {

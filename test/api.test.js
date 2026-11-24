@@ -140,8 +140,41 @@ test('채팅: 안심센터 자동 응답, 연락처 가림, 남의 대화 차단
   assert.equal(msgs.at(-1).me, false);
   const t = await call('/threads', { method: 'POST', token: p, body: { tutorId: 't3', first: '상담 가능할까요?' } });
   assert.equal(t.data.thread.name, '혜원 선생님');
-  assert.equal(t.data.thread.msgs.at(-1).me, false);
+  assert.equal(t.data.thread.msgs.at(-1).me, true); // 실제 서버에선 가짜 자동 답장 없음
   assert.equal((await call('/threads/c3', { token: p })).status, 404);
+});
+
+test('채팅: 보호자와 선생님이 실제로 주고받고, 안 읽은 수가 맞아요', async () => {
+  const p = await demo('parent');
+  const t = await demo('tutor');
+  const open = await call('/threads', { method: 'POST', token: p, body: { tutorId: 't1', first: '내일 4시 괜찮으세요?' } });
+  const id = open.data.thread.id;
+  let tl = (await call('/threads', { token: t })).data.threads.find(x => x.id === id);
+  assert.ok(tl.unread >= 1);
+  assert.equal(tl.msgs.at(-1).t, '내일 4시 괜찮으세요?');
+  assert.equal(tl.msgs.at(-1).me, false);
+  const seen = await call('/threads/' + id, { token: t });
+  assert.equal(seen.data.thread.unread, 0);
+  await call(`/threads/${id}/messages`, { method: 'POST', token: t, body: { text: '네, 그때 봬요!' } });
+  const pl = (await call('/threads', { token: p })).data.threads.find(x => x.id === id);
+  assert.equal(pl.unread, 1);
+  assert.equal(pl.msgs.at(-1).t, '네, 그때 봬요!');
+  assert.equal(pl.msgs.at(-1).me, false);
+});
+
+test('채팅: 안심센터 문의는 관리자가 직접 답해요', async () => {
+  const p = await demo('parent');
+  const a = await demo('admin');
+  const c = await call('/threads', { method: 'POST', token: p, body: { center: true, first: '영수증이 필요해요' } });
+  const id = c.data.thread.id;
+  const inbox = (await call('/threads', { token: a })).data.threads.find(x => x.id === id);
+  assert.ok(inbox && inbox.center);
+  assert.match(inbox.name, /안심센터 문의/);
+  await call(`/threads/${id}/messages`, { method: 'POST', token: a, body: { text: '메일로 보내드렸어요.' } });
+  const mine = (await call('/threads/' + id, { token: p })).data.thread;
+  assert.equal(mine.msgs.at(-1).t, '메일로 보내드렸어요.');
+  assert.equal(mine.msgs.at(-1).me, false);
+  assert.equal(mine.msgs.filter(m => /접수했어요/.test(m.t)).length, 1);
 });
 
 test('커뮤니티: 지역·게시판·단계·나이대, 공감, 댓글, 신고, 삭제', async () => {

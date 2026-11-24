@@ -18,7 +18,9 @@ const fail = (status, msg) => { throw new HttpError(status, msg); };
 const CENTER_REPLY = '접수했어요. 운영팀이 순서대로 연락드릴게요. 급한 안전 문제는 112에 먼저 알려 주세요.';
 const AUTO_REPLIES = ['네, 확인했어요. 수업 때 같이 해볼게요.', '좋아요! 그 시간 괜찮아요.', '집에서는 하루 3분만 해도 충분해요.', '오늘 기록 올려드릴게요.'];
 
-function createCore(db, auth) {
+function createCore(db, auth, opts = {}) {
+  // 서버 없는 미리보기에선 혼자 보니까 선생님 자동 답장을 켜요. 실제 서버에선 사람끼리만 주고받아요.
+  const autoReply = !!opts.autoReply;
   const now = () => new Date().toISOString();
   const pubUser = u => u && { id: u.id, role: u.role, name: u.name, email: u.email, region: u.region };
   const tutorOf = u => u && db.find('tutors', t => t.userId === u.id);
@@ -46,16 +48,43 @@ function createCore(db, auth) {
     th.msgs.push({ from, t, at: now() });
     db.update('threads', th.id, { msgs: th.msgs });
   }
+  // 이 대화에서 나는 누구인지: 당사자면 내 id, 관리자가 안심센터 문의를 보면 'center'
+  function sideOf(th, me) {
+    if (!me) return null;
+    if (th.a === me.id || th.b === me.id) return me.id;
+    if (me.role === 'admin' && th.b === null) return 'center';
+    return null;
+  }
+  const findThread = (id, me) => {
+    const th = db.find('threads', x => x.id === id);
+    return th && sideOf(th, me) ? th : fail(404, '대화를 찾을 수 없어요.');
+  };
+  function markRead(th, side) {
+    const last = th.msgs.at(-1); if (!last) return;
+    const seen = { ...(th.seen || {}), [side]: last.at };
+    db.update('threads', th.id, { seen }); th.seen = seen;
+  }
   function viewThread(th, me) {
-    const otherId = th.a === me.id ? th.b : th.a;
-    const other = otherId ? db.find('users', u => u.id === otherId) : null;
-    const otherTutor = other && db.find('tutors', t => t.userId === other.id);
-    const name = !other ? '터틀리 안심센터' : other.role === 'tutor' ? `${other.name} 선생님` : `${other.name} 보호자`;
+    const side = sideOf(th, me);
+    let name, center, otherTutor = null;
+    if (side === 'center') {
+      const asker = db.find('users', u => u.id === th.a);
+      name = `${asker ? asker.name : '알 수 없음'} ${asker?.role === 'tutor' ? '선생님' : '보호자'} · 안심센터 문의`; center = true;
+    } else {
+      const otherId = th.a === me.id ? th.b : th.a;
+      const other = otherId ? db.find('users', u => u.id === otherId) : null;
+      otherTutor = other && db.find('tutors', t => t.userId === other.id);
+      name = !other ? '터틀리 안심센터' : other.role === 'tutor' ? `${other.name} 선생님` : `${other.name} 보호자`; center = !other;
+    }
+    const seenAt = th.seen?.[side] || '';
+    const unread = th.msgs.filter(m => m.from !== side && m.from !== 'sys' && m.at > seenAt).length;
     return {
-      id: th.id, name, center: !other, tutorId: otherTutor?.id || null, hue: otherTutor?.hue || null,
-      msgs: th.msgs.map(m => ({ me: m.from === me.id, sys: m.from === 'sys', t: m.t, at: m.at })),
+      id: th.id, name, center, tutorId: otherTutor?.id || null, hue: otherTutor?.hue || null, unread,
+      msgs: th.msgs.map(m => ({ me: m.from === side, sys: m.from === 'sys', t: m.t, at: m.at })),
     };
   }
+  const myThreads = me => db.filter('threads', th => !!sideOf(th, me)).map(th => viewThread(th, me))
+    .sort((x, y) => (y.msgs.at(-1)?.at || '').localeCompare(x.msgs.at(-1)?.at || ''));
 
   // ── 정산 ──
   function earnings(t) {
@@ -81,8 +110,7 @@ function createCore(db, auth) {
 
     const saved = db.filter('saved', s => s.userId === me.id);
     const out = { ...base, user: pubUser(me), saved: { tutor: saved.filter(s => s.kind === 'tutor').map(s => s.ref), lib: saved.filter(s => s.kind === 'lib').map(s => s.ref) } };
-    out.threads = db.filter('threads', th => th.a === me.id || th.b === me.id).map(th => viewThread(th, me))
-      .sort((x, y) => (y.msgs.at(-1)?.at || '').localeCompare(x.msgs.at(-1)?.at || ''));
+    out.threads = myThreads(me);
 
     if (me.role === 'parent' || me.role === 'admin') {
       out.kids = db.filter('kids', k => k.parentId === me.id);
@@ -368,26 +396,36 @@ function createCore(db, auth) {
       th = threadFor(me.id, t.userId, t.id);
     }
     if (str(body.first, 300)) sendMsg(th, me, str(body.first, 300));
-    return { thread: viewThread(db.find('threads', x => x.id === th.id), me) };
+    const fresh = db.find('threads', x => x.id === th.id); markRead(fresh, me.id);
+    return { thread: viewThread(fresh, me) };
   });
   function sendMsg(th, me, text) {
-    pushMsg(th, me.id, maskPhone(text));
+    const side = sideOf(th, me);
+    pushMsg(th, side, maskPhone(text));
+    if (side === 'center') return;
     const otherId = th.a === me.id ? th.b : th.a;
-    if (!otherId) { pushMsg(th, 'center', CENTER_REPLY); return; }
+    if (!otherId) {
+      // 안심센터: 처음 한 번만 접수 안내, 답은 관리자 계정에서 직접
+      if (!th.msgs.some(m => m.from === 'sys' && m.t === CENTER_REPLY)) pushMsg(th, 'sys', CENTER_REPLY);
+      return;
+    }
     const ot = db.find('tutors', t => t.userId === otherId);
-    if (ot && ot.demoAuto) pushMsg(th, otherId, AUTO_REPLIES[th.msgs.length % AUTO_REPLIES.length]);
+    if (autoReply && ot && ot.demoAuto) pushMsg(th, otherId, AUTO_REPLIES[th.msgs.length % AUTO_REPLIES.length]);
   }
+  // 대화 목록만 가볍게 (새 메시지 확인용)
+  on('GET', /^\/threads$/, ({ me }) => { need(me); return { threads: myThreads(me) }; });
   on('GET', /^\/threads\/([^/]+)$/, ({ me, m }) => {
     need(me);
-    const th = db.find('threads', x => x.id === m[1] && (x.a === me.id || x.b === me.id)) || fail(404, '대화를 찾을 수 없어요.');
+    const th = findThread(m[1], me); markRead(th, sideOf(th, me));
     return { thread: viewThread(th, me) };
   });
   on('POST', /^\/threads\/([^/]+)\/messages$/, ({ me, body, m }) => {
     need(me);
-    const th = db.find('threads', x => x.id === m[1] && (x.a === me.id || x.b === me.id)) || fail(404, '대화를 찾을 수 없어요.');
+    const th = findThread(m[1], me);
     const text = str(body.text, 500); if (!text) fail(400, '메시지를 적어 주세요.');
     sendMsg(th, me, text);
-    return { thread: viewThread(db.find('threads', x => x.id === th.id), me) };
+    const fresh = db.find('threads', x => x.id === th.id); markRead(fresh, sideOf(fresh, me));
+    return { thread: viewThread(fresh, me) };
   });
 
   // 커뮤니티 닉네임: 보호자 실명은 공개하지 않아요 (선생님은 공개 프로필 이름)

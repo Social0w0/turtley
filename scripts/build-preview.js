@@ -65,7 +65,7 @@ const runtime = `
     isEmpty: function(){ return data.users.length === 0; }, save: save,
   };
   var auth = { hash: function(pw){ return { salt: 'plain', hash: pw }; }, verify: function(pw, s, h){ return s === 'plain' && pw === h; }, token: uid };
-  var core = req('core').createCore(db, auth);
+  var core = req('core').createCore(db, auth, { autoReply: true });
   window.__turtleyReset = function(){ try { localStorage.removeItem(KEY); } catch (e) {} location.reload(); };
   window.__turtleyFetch = async function(url, opt){
     opt = opt || {};
