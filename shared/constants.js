@@ -5,12 +5,12 @@
   else root.TT = C;
 })(typeof self !== 'undefined' ? self : this, function () {
   const SUBJECTS = [
-    { id: 'read', name: '한글·읽기', icon: 'book', bg: '#E8F3FF', fg: '#1B64DA' },
+    { id: 'read', name: '한글·읽기', icon: 'book', bg: '#EAF2DE', fg: '#2E6528' },
     { id: 'num', name: '수 개념', icon: 'calc', bg: '#FFF0E0', fg: '#B45500' },
     { id: 'social', name: '사회성·감정', icon: 'smile', bg: '#FFF6D6', fg: '#8F6400' },
     { id: 'life', name: '생활기술', icon: 'bus', bg: '#FFEDE8', fg: '#C9401C' },
-    { id: 'kor', name: '국어', icon: 'pen', bg: '#E9EEF7', fg: '#2B4A7E' },
-    { id: 'math', name: '수학', icon: 'chart', bg: '#E3F5FA', fg: '#08739A' },
+    { id: 'kor', name: '국어', icon: 'pen', bg: '#EEF0DA', fg: '#566B2C' },
+    { id: 'math', name: '수학', icon: 'chart', bg: '#E4F1EC', fg: '#2F7468' },
     { id: 'eng', name: '영어 기초', icon: 'abc', bg: '#FCE8EC', fg: '#C02A49' },
     { id: 'art', name: '미술·놀이', icon: 'palette', bg: '#F7EEE3', fg: '#8C5310' },
   ];
@@ -43,7 +43,7 @@
   ];
 
   const LIBCAT = { read: '한글·읽기', num: '수 개념', social: '사회성·감정', life: '생활기술', guide: '부모 가이드', tutor: '튜터 연수', adult: '성인 생활' };
-  const LIBART = { read: ['book', '#E8F3FF', '#1B64DA'], num: ['calc', '#FFF0E0', '#B45500'], social: ['smile', '#FFF6D6', '#8F6400'], life: ['bus', '#FFEDE8', '#C9401C'], guide: ['heart', '#FCE8EC', '#C02A49'], tutor: ['sprout', '#E9EEF7', '#2B4A7E'], adult: ['doc', '#E3F5FA', '#08739A'] };
+  const LIBART = { read: ['book', '#EAF2DE', '#2E6528'], num: ['calc', '#FFF0E0', '#B45500'], social: ['smile', '#FFF6D6', '#8F6400'], life: ['bus', '#FFEDE8', '#C9401C'], guide: ['heart', '#FCE8EC', '#C02A49'], tutor: ['sprout', '#EEF0DA', '#566B2C'], adult: ['doc', '#E4F1EC', '#2F7468'] };
 
   const CURRICULUM = {
     read: ['좋아하는 그림책 고르기·첫 만남', '받침 없는 낱말 읽기', '짧은 문장 소리 내어 읽기', '읽은 문장 그림으로 다시 말하기', '문장 두 개 이어 읽기', '이야기 순서 카드 맞추기', '한 쪽 끝까지 읽기', '이번 달 한 걸음 돌아보기'],

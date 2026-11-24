@@ -5,11 +5,11 @@ const { hashPassword } = require('./auth');
 const PW = 'demo1234';
 
 const TUTORS = [
-  { id: 't1', name: '지은', hue: '#2272EB', region: '서울', dist: '마포구', modes: ['visit', 'online'], subj: ['read', 'kor'], tg: ['초등 저학년', '초등 고학년'], yrs: 9, gap: '육아로 4년 쉬고 복귀', certs: ['독서지도사', '보육교사 2급'], price: 30000,
+  { id: 't1', name: '지은', hue: '#3D7B35', region: '서울', dist: '마포구', modes: ['visit', 'online'], subj: ['read', 'kor'], tg: ['초등 저학년', '초등 고학년'], yrs: 9, gap: '육아로 4년 쉬고 복귀', certs: ['독서지도사', '보육교사 2급'], price: 30000,
     fit: '글자를 읽어도 뜻을 놓치는 아이', how: '10분씩 끊어 읽고 그림카드로 다시 말해요',
     intro: '방과후 독서 강사로 6년 일했고, 두 아이를 키우며 4년 쉬었어요. 한 문장을 끝까지 읽어낸 날을 아이와 같이 기록합니다.',
     approach: ['한 번에 한 문장, 10분 단위로 끊어 읽어요', '읽은 내용을 그림카드로 다시 말하게 해요', '맞힌 순간 바로, 짧게 칭찬해요'], slots: ['월 16', '수 16', '금 15', '토 10'], trial: true },
-  { id: 't2', name: '미정', hue: '#3F78B5', region: '경기', dist: '수원시 영통구', modes: ['visit'], subj: ['num', 'math'], tg: ['초등 저학년'], yrs: 12, gap: '학습지 교사 8년 후 3년 공백', certs: ['수학지도사 1급'], price: 28000,
+  { id: 't2', name: '미정', hue: '#4F7A5A', region: '경기', dist: '수원시 영통구', modes: ['visit'], subj: ['num', 'math'], tg: ['초등 저학년'], yrs: 12, gap: '학습지 교사 8년 후 3년 공백', certs: ['수학지도사 1급'], price: 28000,
     fit: '10이 넘는 수에서 자주 멈추는 아이', how: '구슬과 동전으로 손에 잡히는 셈을 먼저 해요',
     intro: '학습지 방문교사로 8년을 일했어요. 수를 눈으로 보고 손으로 세는 단계부터 다시 쌓습니다.',
     approach: ['구체물(구슬·동전) → 그림 → 숫자 순서로 가요', '같은 문제를 세 가지 방법으로 반복해요', '틀린 문제는 다음 수업 첫 5분에 다시 풀어요'], slots: ['화 15', '목 15', '토 13'], trial: true },
@@ -17,7 +17,7 @@ const TUTORS = [
     fit: '속상하면 말 대신 울음이 먼저 나오는 아이', how: '감정 카드와 역할놀이로 마음에 이름을 붙여요',
     intro: '어린이집 교사로 5년 일했어요. 놀이 안에서 기다리기, 부탁하기, 거절하기를 연습합니다.',
     approach: ['수업 시작마다 오늘 기분 카드 고르기', '친구와 있었던 일을 인형극으로 다시 해보기', '부모님께 가정 연습 과제 한 가지만 드려요'], slots: ['월 15', '화 15', '목 16'], trial: true },
-  { id: 't4', name: '선영', hue: '#4E5968', region: '인천', dist: '연수구', modes: ['online'], subj: ['kor', 'read'], tg: ['중학생'], yrs: 15, gap: '중등 기간제 교사 후 5년 공백', certs: ['중등 정교사 2급(국어)'], price: 35000,
+  { id: 't4', name: '선영', hue: '#6B6550', region: '인천', dist: '연수구', modes: ['online'], subj: ['kor', 'read'], tg: ['중학생'], yrs: 15, gap: '중등 기간제 교사 후 5년 공백', certs: ['중등 정교사 2급(국어)'], price: 35000,
     fit: '교과서 지문이 길면 손을 놓는 중학생', how: '지문을 세 덩어리로 나누고 핵심어에 색을 칠해요',
     intro: '중학교 국어 기간제 교사로 10년 가르쳤어요. 화상 수업에서도 화면을 같이 보며 밑줄을 긋습니다.',
     approach: ['긴 지문은 세 덩어리로 나눠요', '핵심어 3개만 찾게 해요', '시험 직전 2주는 교과서 지문만 반복해요'], slots: ['월 19', '수 19', '금 19'], trial: false },
@@ -33,19 +33,19 @@ const TUTORS = [
     fit: '말보다 그림으로 마음을 보여주는 아이', how: '그림을 그리며 오늘 있었던 일을 이야기해요',
     intro: '미술학원을 6년 운영했어요. 손으로 만드는 시간 동안 순서 지키기와 마무리하기를 연습합니다.',
     approach: ['작업 순서를 그림 카드로 붙여둬요', '끝까지 마친 작품은 사진으로 남겨요', '완성 대신 과정에 칭찬해요'], slots: ['화 13', '목 13', '금 15'], trial: true },
-  { id: 't8', name: '나래', hue: '#08739A', region: '광주', dist: '북구', modes: ['online'], subj: ['math'], tg: ['중학생', '고등학생'], yrs: 9, gap: '중등 기간제 교사 후 4년 공백', certs: ['중등 정교사 2급(수학)'], price: 33000,
+  { id: 't8', name: '나래', hue: '#2F7468', region: '광주', dist: '북구', modes: ['online'], subj: ['math'], tg: ['중학생', '고등학생'], yrs: 9, gap: '중등 기간제 교사 후 4년 공백', certs: ['중등 정교사 2급(수학)'], price: 33000,
     fit: '문장제에서 무엇을 묻는지 놓치는 학생', how: '문제를 그림으로 바꿔 그리고 식을 세워요',
     intro: '중학교 수학 기간제 교사로 5년 일했어요. 공식보다 문제를 그림으로 옮기는 연습을 먼저 합니다.',
     approach: ['문제 속 숫자에 동그라미', '상황을 그림 한 장으로', '풀이를 말로 설명해 보기'], slots: ['월 19', '목 19', '토 15'], trial: false },
-  { id: 't9', name: '정민', hue: '#2F67A3', region: '경기', dist: '성남시 분당구', modes: ['visit'], subj: ['read', 'social'], tg: ['유아', '초등 저학년'], yrs: 6, gap: '언어치료실 근무 후 2년 공백', certs: ['언어재활사 2급'], price: 38000,
+  { id: 't9', name: '정민', hue: '#3A7568', region: '경기', dist: '성남시 분당구', modes: ['visit'], subj: ['read', 'social'], tg: ['유아', '초등 저학년'], yrs: 6, gap: '언어치료실 근무 후 2년 공백', certs: ['언어재활사 2급'], price: 38000,
     fit: '말소리가 또렷하지 않아 자신감이 낮은 아이', how: '짧은 말놀이로 소리와 낱말을 함께 다져요',
     intro: '언어치료실에서 4년 일했어요. 읽기와 말하기를 함께 다루고, 수업 뒤에 가정 연습을 3분짜리로 드립니다.',
     approach: ['말놀이로 시작하는 5분', '낱말 카드 → 짧은 문장', '가정 연습 하루 3분'], slots: ['화 16', '금 16'], trial: true },
-  { id: 't10', name: '소연', hue: '#2B4A7E', region: '서울', dist: '송파구', modes: ['visit', 'online'], subj: ['social', 'life'], tg: ['초등 고학년', '중학생'], yrs: 13, gap: '청소년상담센터 후 5년 공백', certs: ['청소년상담사 3급'], price: 32000,
+  { id: 't10', name: '소연', hue: '#566B2C', region: '서울', dist: '송파구', modes: ['visit', 'online'], subj: ['social', 'life'], tg: ['초등 고학년', '중학생'], yrs: 13, gap: '청소년상담센터 후 5년 공백', certs: ['청소년상담사 3급'], price: 32000,
     fit: '단체 생활에서 자주 지치는 아이', how: '학교에서 생길 장면을 미리 연습해요',
     intro: '청소년상담센터에서 8년 일했어요. 학교에서 자주 생기는 열 가지 장면을 미리 말로 연습합니다.',
     approach: ['학교 장면 대본으로 역할 연습', '힘든 순간 쓰는 한 문장 정하기', '한 달에 한 번 부모 상담 15분'], slots: ['월 17', '수 17', '토 10'], trial: true },
-  { id: 't11', name: '현주', hue: '#6B7684', region: '경기', dist: '고양시 일산동구', modes: ['online'], subj: ['life'], tg: ['성인'], yrs: 14, gap: '은행 창구 10년 후 4년 공백', certs: ['금융교육 강사 과정 수료'], price: 30000,
+  { id: 't11', name: '현주', hue: '#7A6E58', region: '경기', dist: '고양시 일산동구', modes: ['online'], subj: ['life'], tg: ['성인'], yrs: 14, gap: '은행 창구 10년 후 4년 공백', certs: ['금융교육 강사 과정 수료'], price: 30000,
     fit: '통장·계약서 앞에서 막막한 성인 느린학습자', how: '실제 서류 견본으로 확인할 칸부터 짚어요',
     intro: '은행 창구에서 10년 일했어요. 계좌, 카드, 휴대폰 요금처럼 생활에서 바로 쓰는 금융을 천천히 다룹니다.',
     approach: ['서류 견본에서 확인할 칸 3개', '모르는 말은 쉬운 말로 다시 적기', '혼자 결정하기 전에 물어볼 사람 정하기'], slots: ['화 19', '목 19', '토 10'], trial: true },
@@ -130,7 +130,7 @@ function seed(db, { hash } = {}) {
   });
   PENDING.forEach((p, i) => {
     const u = mkUser({ role: 'tutor', name: p.name, email: `pending${i + 1}@turtley.dev`, region: p.region });
-    const row = db.insert('tutors', { id: 'tp' + (i + 1), userId: u.id, name: p.name, hue: '#2272EB', region: p.region, dist: p.dist, modes: ['visit'], subj: p.subj, tg: [], yrs: 5, gap: '', certs: [], price: 30000, fit: '', how: '', intro: '', approach: [], slots: [], trial: true, status: 'pending', docs: p.docs });
+    const row = db.insert('tutors', { id: 'tp' + (i + 1), userId: u.id, name: p.name, hue: '#3D7B35', region: p.region, dist: p.dist, modes: ['visit'], subj: p.subj, tg: [], yrs: 5, gap: '', certs: [], price: 30000, fit: '', how: '', intro: '', approach: [], slots: [], trial: true, status: 'pending', docs: p.docs });
     row.createdAt = hoursAgo(p.ago * 24 + 1);
   });
 

@@ -234,10 +234,22 @@ const GUEST_KID = { id: null, name: '우리 아이', grade: '', region: '서울'
 const kid = () => S.kids[0] || GUEST_KID;
 const doneOf = b => S.lessons.filter(l => l.bookingId === b.id && l.confirmed).length;
 async function loginAs(r) { const d = await api('/auth/demo', { method: 'POST', body: { role: r } }); setToken(d.token); UI.cf.level = null; await sync(); }
-const run = fn => async (...a) => { try { await fn(...a); } catch (e) { toast(e.message); } };
+// 누른 버튼은 처리가 끝날 때까지 잠가요 (두 번 눌러도 한 번만 보내기 + 기다리는 중 표시)
+const busyEl = e => { const c = e && e.currentTarget; if (!(c instanceof HTMLElement)) return null; return c.tagName === 'FORM' ? $('button[type=submit],button:not([type])', c) || c : c; };
+const run = fn => async (...a) => {
+  const b = busyEl(a[0]); if (b && b.dataset.lock) return;
+  let t = null; if (b) { b.dataset.lock = '1'; t = setTimeout(() => b.setAttribute('aria-busy', 'true'), 150); }
+  try { await fn(...a); } catch (e) { toast(e.message); } finally { if (b) { clearTimeout(t); b.removeAttribute('aria-busy'); b.removeAttribute('data-lock'); } }
+};
 
 /* ===================== 레이어: 시트 · 대화상자 · 토스트 ===================== */
 let layer, view, tabbar;
+// 시트는 브라우저 기록에 한 칸 쌓아서, 휴대폰 뒤로가기를 누르면 화면을 떠나지 않고 시트만 닫혀요
+let sheetStack = [], backPending = false, goQueue = null;
+addEventListener('popstate', () => {
+  if (backPending) { backPending = false; if (goQueue) { const h = goQueue; goQueue = null; go(h); } return; }
+  const top = sheetStack[sheetStack.length - 1]; if (top) top(true);
+});
 function toast(m) { const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = m; layer.appendChild(t); requestAnimationFrame(() => t.classList.add('on')); setTimeout(() => { t.classList.remove('on'); setTimeout(() => t.remove(), 300); }, 2400); }
 function sheet({ title, html, mount, label }) {
   const dim = document.createElement('div'); dim.className = 'dim';
@@ -245,9 +257,12 @@ function sheet({ title, html, mount, label }) {
   sh.innerHTML = `<div class="grab"></div><div class="sh-h"><h2>${title || ''}</h2><button class="ib plain" data-x aria-label="닫기">${ic('x', 22)}</button></div><div class="sh-b">${html}</div>`;
   layer.append(dim, sh); const prev = document.activeElement;
   requestAnimationFrame(() => { dim.classList.add('on'); sh.classList.add('on'); });
-  const close = () => { dim.classList.remove('on'); sh.classList.remove('on'); document.removeEventListener('keydown', k); setTimeout(() => { dim.remove(); sh.remove(); }, 320); prev && prev.focus && prev.focus(); };
+  history.pushState({ sheet: true }, ''); let closed = false;
+  const close = fromPop => { if (closed) return; closed = true; sheetStack = sheetStack.filter(x => x !== close);
+    if (fromPop !== true && history.state && history.state.sheet) { backPending = true; history.back(); }
+    dim.classList.remove('on'); sh.classList.remove('on'); document.removeEventListener('keydown', k); setTimeout(() => { dim.remove(); sh.remove(); }, 320); prev && prev.focus && prev.focus(); };
   const k = e => { if (e.key === 'Escape') close(); }; document.addEventListener('keydown', k);
-  dim.onclick = close; $('[data-x]', sh).onclick = close;
+  sheetStack.push(close); dim.onclick = () => close(); $('[data-x]', sh).onclick = () => close();
   setTimeout(() => { const f = $('input,button:not([data-x]),select,textarea', $('.sh-b', sh)); f && f.focus({ preventScroll: true }); }, 340);
   mount && mount(sh, close); applyRead(); return { el: sh, close };
 }
@@ -293,7 +308,7 @@ function parse() {
   if (ROUTES[h]) return { r: h };
   return { r: 'home' };
 }
-function go(h) { if (location.hash.slice(1) === h) render(); else location.hash = h; }
+function go(h) { if (backPending) { goQueue = h; return; } if (location.hash.slice(1) === h) render(); else location.hash = h; }
 let curRoute = '', firstRender = true, poll = null;
 function tabsHTML(r) {
   const set = role() === 'tutor' ? TABS.tutor : TABS.guest; const active = TABOF[r] || r;
@@ -301,7 +316,7 @@ function tabsHTML(r) {
 }
 function render() {
   const p = parse(), r = p.r, need = NEED[r]; stopSpeak(); clearInterval(poll);
-  $$('.layer > *').forEach(x => x.remove());
+  $$('.layer > *').forEach(x => x.remove()); sheetStack = [];
   if (need && !S.user) { UI.next = location.hash.slice(1); UI.loginNote = true; saveUI(); location.replace('#login'); return; }
   let v;
   if (need && need !== 'any' && S.user.role !== need && !(need === 'parent' && S.user.role === 'admin')) v = vGate(need);
@@ -366,7 +381,9 @@ function fit() {
 }
 
 /* ===================== 공통 조각 ===================== */
-const av = (t, c = '') => `<span class="av ${c}" style="background:${t.hue || 'var(--tint)'}" aria-hidden="true">${esc(t.name[0])}<span class="tb"><img src="${TURTLE_SM}" alt=""></span></span>`;
+// 예전에 저장된 파란 계열 색은 따뜻한 초록·흙색으로 바꿔서 보여줘요
+const HUE_WARM = { '#2272EB': '#3D7B35', '#3F78B5': '#4F7A5A', '#4E5968': '#6B6550', '#08739A': '#2F7468', '#2F67A3': '#3A7568', '#2B4A7E': '#566B2C', '#6B7684': '#7A6E58' };
+const av = (t, c = '') => `<span class="av ${c}" style="background:${HUE_WARM[t.hue] || t.hue || 'var(--tint)'}" aria-hidden="true">${esc(t.name[0])}<span class="tb"><img src="${TURTLE_SM}" alt=""></span></span>`;
 const backBar = (t, back = 'home', right = '') => `<div class="appbar white"><button class="back" data-back="${back}" aria-label="뒤로">${ic('chevL', 26, 2.2)}<span>뒤로</span></button><div class="t">${t}</div>${right || '<span class="sp"></span>'}</div>`;
 const secH = (t, more, g) => `<div class="sec-h"><h2>${t}</h2>${more ? `<button class="more" data-go="${g}">${more}</button>` : ''}</div>`;
 const tutorCard = t => `<a class="tcard" href="#tutor-${t.id}">${av(t)}<div><div class="nm">${esc(t.name)} 선생님 <span class="verified" title="안심 인증 완료" aria-label="안심 인증 완료">${ic('check', 12, 3)}</span></div><div class="meta">${t.region} ${esc(t.dist)} · 경력 ${t.yrs}년 · ${modeTxt(t)}</div><div class="tags">${t.subj.map(s => `<span class="tag g">${SUBJ[s].name}</span>`).join('')}${t.tg.map(x => `<span class="tag">${x}</span>`).join('')}${t.trial ? '<span class="tag b">체험 가능</span>' : ''}</div></div>
@@ -439,7 +456,7 @@ function vSignup() {
   const title = ['어떤 분이세요?', '계정 만들기', `${typeName} 정보`, '약관 동의', '가입 완료'][st];
   let body = '';
   if (st === 0) body = `<div class="typecards" role="radiogroup" aria-label="회원 유형">
-  ${[['parent', 'heart', '#FCE6EF', '#A33461', '보호자', '아이에게 맞는 선생님을 찾아요'], ['tutor', 'sprout', '#E8F3FF', '#1B64DA', '선생님', '느린학습자 아이를 1:1로 가르쳐요'], ['adult', 'user', '#FFF0E0', '#B45500', '성인 학습자', '내가 직접 생활·금융·읽기를 배워요']].map(([v, i, bg, fg, n, d]) => `<label><span class="ti" style="background:${bg};color:${fg}">${ic(i, 26)}</span><span><b>${n}</b><small>${d}</small></span><input type="radio" name="ty" value="${v}" ${ty === v ? 'checked' : ''} aria-label="${n}"></label>`).join('')}</div>
+  ${[['parent', 'heart', '#FCE6EF', '#A33461', '보호자', '아이에게 맞는 선생님을 찾아요'], ['tutor', 'sprout', '#EAF2DE', '#2E6528', '선생님', '느린학습자 아이를 1:1로 가르쳐요'], ['adult', 'user', '#FFF0E0', '#B45500', '성인 학습자', '내가 직접 생활·금융·읽기를 배워요']].map(([v, i, bg, fg, n, d]) => `<label><span class="ti" style="background:${bg};color:${fg}">${ic(i, 26)}</span><span><b>${n}</b><small>${d}</small></span><input type="radio" name="ty" value="${v}" ${ty === v ? 'checked' : ''} aria-label="${n}"></label>`).join('')}</div>
   <p class="err" id="e0" style="margin-top:8px"></p>`;
   if (st === 1) body = `<div class="field"><label class="req" for="sn">이름</label><input class="in" id="sn" value="${esc(SG.a.name || '')}" autocomplete="name"><p class="err" id="esn"></p></div>
   <div class="field"><label class="req" for="se">이메일</label><input class="in" id="se" type="email" value="${esc(SG.a.email || '')}" autocomplete="email"><p class="err" id="ese"></p></div>
@@ -624,7 +641,7 @@ function vTutor(p) {
  <div class="sec">${secH('선생님 소개')}<div class="card"><p class="para">${esc(t.intro)}</p></div></div>
  <div class="sec">${secH('이런 아이와 잘 맞아요')}<div class="two"><div class="card"><p style="margin:0 0 4px;font-size:12.5px;font-weight:700;color:var(--muted)">이런 아이에게</p><p class="para" style="font-size:15px">${esc(t.fit)}</p></div><div class="card" style="background:var(--tint-soft)"><p style="margin:0 0 4px;font-size:12.5px;font-weight:700;color:var(--tint-text)">이렇게 가르쳐요</p><p class="para" style="font-size:15px;color:var(--ink)">${esc(t.how)}</p></div></div></div>
  <div class="sec">${secH('수업 원칙')}<div class="card"><ul class="bul">${t.approach.map(a => `<li>${ic('check', 18, 2.2)}<span>${esc(a)}</span></li>`).join('')}</ul></div></div>
- <div class="sec">${secH('가능한 시간')}<div class="card"><div class="week" role="table" aria-label="요일별 가능 시간"><span></span>${DAYS.map(d => `<span class="h">${d}</span>`).join('')}${HOURS.map(h => `<span class="tm">${h}시</span>${DAYS.map(d => `<span class="c ${on.has(d + ' ' + h) ? 'on' : ''}" ${on.has(d + ' ' + h) ? `aria-label="${d} ${h}시 가능"` : ''}></span>`).join('')}`).join('')}</div><p class="cap" style="padding:0;margin-top:8px">파란 칸이 수업 가능한 시간이에요. 회당 50분.</p></div></div>
+ <div class="sec">${secH('가능한 시간')}<div class="card"><div class="week" role="table" aria-label="요일별 가능 시간"><span></span>${DAYS.map(d => `<span class="h">${d}</span>`).join('')}${HOURS.map(h => `<span class="tm">${h}시</span>${DAYS.map(d => `<span class="c ${on.has(d + ' ' + h) ? 'on' : ''}" ${on.has(d + ' ' + h) ? `aria-label="${d} ${h}시 가능"` : ''}></span>`).join('')}`).join('')}</div><p class="cap" style="padding:0;margin-top:8px">초록 칸이 수업 가능한 시간이에요. 회당 50분.</p></div></div>
  <div class="sec">${secH('한 달 커리큘럼 (8회)')}<div class="card"><ol class="cur">${cur.map(c => `<li>${c}</li>`).join('')}</ol></div></div>
  <div class="sec">${secH('자격·경력')}<div class="card"><div class="tags">${t.certs.map(c => `<span class="tag b">${esc(c)}</span>`).join('')}${t.gap ? `<span class="tag">${esc(t.gap)}</span>` : ''}<span class="tag g">터틀리 연수 수료</span></div></div></div>
  <div class="sec">${secH('수업 후기')}<div id="rv"><div class="card" style="text-align:center;color:var(--muted)"><p style="margin:0">불러오는 중…</p></div></div></div>
@@ -879,18 +896,18 @@ function libSheet(id, cb) {
 function vMy() {
   const u = me(), r = role();
   const row = (g, i, bg, t, sub, extra = '') => `<button class="row" ${g.startsWith('#') ? `id="${g.slice(1)}"` : `data-go="${g}"`}><span class="ri" style="background:${bg}">${ic(i, 18)}</span><span class="rt">${t}${sub ? `<small>${sub}</small>` : ''}</span>${extra}<span class="chev">${ic('chevR', 18)}</span></button>`;
-  const common = `<div class="sec"><div class="list">${row('easy', 'text', '#4E5968', '쉬운 화면', `글자 ${['보통', '크게', '아주 크게'][[1, 1.15, 1.3].indexOf(UI.fs)] || '보통'} · 읽어주기 ${UI.read ? '켬' : '끔'}`)}${row('#myrpt', 'report', '#08739A', '플랫폼 분석 리포트', '시장 · 필수 요건 · 가격·수익 산출')}${u ? row('#center', 'shield', '#3F78B5', '터틀리 안심센터', '신고 · 환불 · 이용 문의') : ''}</div></div>`;
+  const common = `<div class="sec"><div class="list">${row('easy', 'text', '#5E604F', '쉬운 화면', `글자 ${['보통', '크게', '아주 크게'][[1, 1.15, 1.3].indexOf(UI.fs)] || '보통'} · 읽어주기 ${UI.read ? '켬' : '끔'}`)}${row('#myrpt', 'report', '#2F7468', '플랫폼 분석 리포트', '시장 · 필수 요건 · 가격·수익 산출')}${u ? row('#center', 'shield', '#4F7A5A', '터틀리 안심센터', '신고 · 환불 · 이용 문의') : ''}</div></div>`;
   if (!u) return { title: '마이', html: `<div class="lt"><h1>마이</h1></div><div class="me"><img src="${TURTLE}" alt="" style="width:64px"><div><b>반가워요!</b><small>로그인하면 아이에게 맞는 선생님을 추천해요</small></div></div>
   <div class="sec" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn" data-go="login">로그인</button><button class="btn ghost" data-go="signup">회원가입</button></div>${common}`, mount() { $('#myrpt').onclick = openReport; } };
   const lbl = { parent: '보호자', tutor: '선생님', admin: '관리자' }[r]; const bk = S.bookings.find(b => b.status === 'active');
   let mid = '';
   if (r === 'parent' || r === 'admin') mid = `<div class="kpi"><div><b>${bk ? doneOf(bk) + '/' + bk.pkg : '0'}</b><span>이번 달 수업</span></div><div><b>${S.kids.length}명</b><span>아이 프로필</span></div><div><b>${S.bookings.length}건</b><span>결제</span></div></div>
-  <div class="sec"><div class="list">${row('kids', 'heart', '#A33461', '아이 관리', S.kids.map(k => esc(k.name) + (k.level ? ` · ${levelName(k.level)}` : '')).join(', ') || '아이를 추가해 주세요')}${row('lessons', 'chart', '#2272EB', '수업 기록', S.lessons.some(l => !l.confirmed) ? '확인할 기록이 있어요' : '오늘의 한 걸음 · 집중 시간')}${row('chat', 'chat', '#2F67A3', '채팅', `${S.threads.length}개 대화`)}${row('payments', 'receipt', '#8A6200', '결제 내역', '환불 신청')}${row('request', 'apply', '#08739A', '수업 신청서 쓰기', S.requests.length ? `올린 신청서 ${S.requests.length}건` : '선생님이 먼저 지원해요')}</div></div>`;
+  <div class="sec"><div class="list">${row('kids', 'heart', '#A33461', '아이 관리', S.kids.map(k => esc(k.name) + (k.level ? ` · ${levelName(k.level)}` : '')).join(', ') || '아이를 추가해 주세요')}${row('lessons', 'chart', '#3D7B35', '수업 기록', S.lessons.some(l => !l.confirmed) ? '확인할 기록이 있어요' : '오늘의 한 걸음 · 집중 시간')}${row('chat', 'chat', '#3A7568', '채팅', `${S.threads.length}개 대화`)}${row('payments', 'receipt', '#8A6200', '결제 내역', '환불 신청')}${row('request', 'apply', '#2F7468', '수업 신청서 쓰기', S.requests.length ? `올린 신청서 ${S.requests.length}건` : '선생님이 먼저 지원해요')}</div></div>`;
   if (r === 'tutor') { const e = S.earnings || { done: 0, expected: 0 }; const dc = S.myTutor ? Object.values(S.myTutor.docs || {}).filter(Boolean).length : 0;
     mid = `<div class="kpi"><div><b>${e.done}회</b><span>이번 달 완료</span></div><div><b>${(e.expected / 10000).toFixed(1).replace('.0', '')}만</b><span>예상 정산</span></div><div><b>${dc}/4</b><span>안심 인증</span></div></div>
-  <div class="sec"><div class="list">${row('thome', 'wallet', '#2272EB', '선생님 홈', '정산 · 가능 시간 · 수익 계산')}${row('students', 'apply', '#2F67A3', '학생 찾기', '열린 신청서에 지원하기')}${row('chat', 'chat', '#08739A', '채팅', `${S.threads.length}개 대화`)}${row('#lib-t', 'sprout', '#8A6200', '무료 튜터 연수', 'e-도서관 튜터 연수 자료')}</div></div>`; }
+  <div class="sec"><div class="list">${row('thome', 'wallet', '#3D7B35', '선생님 홈', '정산 · 가능 시간 · 수익 계산')}${row('students', 'apply', '#3A7568', '학생 찾기', '열린 신청서에 지원하기')}${row('chat', 'chat', '#2F7468', '채팅', `${S.threads.length}개 대화`)}${row('#lib-t', 'sprout', '#8A6200', '무료 튜터 연수', 'e-도서관 튜터 연수 자료')}</div></div>`; }
   return { title: '마이', html: `<div class="lt"><h1>마이</h1></div><div class="me"><span class="av" style="background:var(--tint)">${esc(u.name[0])}</span><div style="flex:1"><b>${esc(u.name)}${r === 'tutor' ? ' 선생님' : ' 님'}</b><small>${esc(u.email)}</small></div><span class="tag g">${lbl}</span></div>${mid}${common}
-  <div class="sec">${secH('데모 체험')}<div class="list">${r !== 'tutor' ? row('#sw-t', 'sprout', '#2272EB', '선생님 화면으로 보기', '') : row('#sw-p', 'heart', '#A33461', '보호자 화면으로 보기', '')}${row('#sw-a', 'shield', '#1D1D1F', '관리자 화면', '튜터 서류 심사')}${row('#reset', 'refresh', '#6C6C70', '화면 설정 처음으로', '글자 크기·필터·작성 중인 예약')}</div></div>
+  <div class="sec">${secH('데모 체험')}<div class="list">${r !== 'tutor' ? row('#sw-t', 'sprout', '#3D7B35', '선생님 화면으로 보기', '') : row('#sw-p', 'heart', '#A33461', '보호자 화면으로 보기', '')}${row('#sw-a', 'shield', '#1D1D1F', '관리자 화면', '튜터 서류 심사')}${row('#reset', 'refresh', '#6C6C70', '화면 설정 처음으로', '글자 크기·필터·작성 중인 예약')}</div></div>
   <div class="sec"><button class="btn block danger" id="lo">로그아웃</button></div>`,
   mount() {
     $('#myrpt').onclick = openReport;
@@ -955,8 +972,8 @@ function vEasy() {
   return { title: '쉬운 화면', html: `${backBar('쉬운 화면', 'my')}
  <div class="sec" style="margin-top:8px"><div class="easy-prev"><p class="hand" style="font-size:30px;color:var(--ink2);margin:0 0 4px">미리 보기</p><p style="margin:0;font-size:17px" data-say>오늘은 받침 없는 글자 다섯 개를 읽어요. 다 읽으면 선생님이 박수를 쳐 줄 거예요.</p></div></div>
  <div class="sec">${secH('글자 크기')}<div class="seg" style="margin:0" role="group" aria-label="글자 크기">${[[1, '보통'], [1.15, '크게'], [1.3, '아주 크게']].map(([v, n]) => `<button data-fs="${v}" aria-pressed="${UI.fs === v}">${n}</button>`).join('')}</div></div>
- <div class="sec"><div class="list"><div class="row"><span class="ri" style="background:#2272EB">${ic('vol', 18)}</span><span class="rt">읽어주기<small>켜면 글을 누를 때 소리로 읽어요</small></span><label class="sw"><input type="checkbox" id="rd" ${UI.read ? 'checked' : ''} aria-label="읽어주기"><span></span></label></div>
-  <div class="row"><span class="ri" style="background:#2F67A3">${ic('eye', 18)}</span><span class="rt">움직임 줄이기<small>화면 전환 효과를 꺼요</small></span><label class="sw"><input type="checkbox" id="mo" ${UI.motion ? 'checked' : ''} aria-label="움직임 줄이기"><span></span></label></div></div></div>
+ <div class="sec"><div class="list"><div class="row"><span class="ri" style="background:#3D7B35">${ic('vol', 18)}</span><span class="rt">읽어주기<small>켜면 글을 누를 때 소리로 읽어요</small></span><label class="sw"><input type="checkbox" id="rd" ${UI.read ? 'checked' : ''} aria-label="읽어주기"><span></span></label></div>
+  <div class="row"><span class="ri" style="background:#3A7568">${ic('eye', 18)}</span><span class="rt">움직임 줄이기<small>화면 전환 효과를 꺼요</small></span><label class="sw"><input type="checkbox" id="mo" ${UI.motion ? 'checked' : ''} aria-label="움직임 줄이기"><span></span></label></div></div></div>
  <div class="sec"><button class="btn block ghost" id="try">${ic('vol', 20)}미리 보기 읽어주기</button></div>`,
   mount() {
     $$('[data-fs]').forEach(b => b.onclick = () => { UI.fs = +b.dataset.fs; saveUI(); applyA11y(); $$('[data-fs]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); });
