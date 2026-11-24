@@ -37,7 +37,7 @@ npm install
 npm start          # → http://localhost:3000
 ```
 
-Node.js 18 이상이면 됩니다. 웹폰트(Pretendard, 고운돋움)는 npm 패키지에서 서버가 직접 제공해서 CDN 없이도 동작합니다. 첫 실행 시 `data/db.json`에 데모 데이터가 자동으로 들어갑니다.
+Node.js 18 이상이면 됩니다. 웹폰트(Pretendard, 고운돋움)는 npm 패키지에서 서버가 직접 제공해서 CDN 없이도 동작합니다. `DATABASE_URL`이 없으면 `data/db.json` 파일에 저장하고, 비어 있으면 데모 데이터가 자동으로 들어갑니다.
 
 | 데모 계정 | 이메일 | 비밀번호 |
 |---|---|---|
@@ -58,7 +58,8 @@ turtley/
 ├─ server/
 │  ├─ index.js      # 서버 진입점 (PORT, DB_FILE 환경변수)
 │  ├─ app.js        # Express 앱 + REST API 전체
-│  ├─ db.js         # JSON 파일 DB (나중에 PostgreSQL 등으로 교체)
+│  ├─ db.js         # 저장소 선택 (DATABASE_URL → Postgres, 없으면 JSON 파일)
+│  ├─ pg-store.js   # PostgreSQL 저장소
 │  ├─ auth.js       # 비밀번호 해시, 토큰 인증 미들웨어
 │  ├─ pricing.js    # 요금제 · 수수료(20%) 계산
 │  └─ seed.js       # 데모 데이터
@@ -96,15 +97,32 @@ turtley/
 | DELETE | `/posts/:id` | 작성자 | 삭제 |
 | GET | `/library?category=&free=` | - | e-도서관 |
 
-## 배포 팁
+## Render 배포
 
-- **Render / Railway / Fly.io**: Start command `npm start`, 환경변수 `PORT`는 플랫폼이 자동 지정.
-  단, 이 데모의 JSON DB는 파일이라 재배포 시 초기화될 수 있으니 영구 디스크를 붙이거나 DB를 교체하세요.
+Render 무료 웹서비스는 디스크가 재시작마다 지워지므로 **반드시 Postgres를 연결**하세요. 연결하지 않으면 서버를 껐다 켤 때마다 데이터가 초기화됩니다.
+
+1. Render 대시보드 → **New → Postgres** 생성 (웹서비스와 **같은 리전**)
+2. 생성된 DB 페이지에서 **Internal Database URL** 복사
+3. 웹서비스 → **Environment** → `DATABASE_URL` 에 붙여 넣기 → 저장 (자동 재배포)
+4. 확인: `https://<서비스주소>/api/health` 응답에 `"storage":"postgres"` 가 보이면 성공
+   (로그에도 `[db] 저장소: PostgreSQL (DATABASE_URL)` 출력)
+
+| 항목 | 값 |
+|---|---|
+| Build Command | `npm install` |
+| Start Command | `npm start` |
+| `DATABASE_URL` | Internal Database URL |
+| `PORT` | 비워 두기 (Render가 지정) |
+
+- 데이터 초기화가 필요하면 Render 웹서비스 **Shell**에서 `npm run seed`
+- Render **무료 Postgres는 생성 후 30일이 지나면 만료**됩니다. 오래 쓸 데모라면 유료 플랜이나 외부 Postgres(Neon, Supabase 등)의 URL을 `DATABASE_URL`에 넣으면 그대로 동작합니다.
+- 현재는 전체 상태를 `turtley_state` 테이블의 jsonb 한 행에 저장하는 데모용 구조입니다. 사용자가 늘면 테이블 분리가 필요합니다.
 - GitHub Pages는 정적 호스팅이라 백엔드가 돌지 않습니다.
 
 ## 다음 단계 (로드맵)
 
-- [ ] PostgreSQL + 마이그레이션 (`server/db.js` 인터페이스 교체)
+- [x] PostgreSQL 저장 (`DATABASE_URL`)
+- [ ] 테이블 분리 + 마이그레이션 (현재는 jsonb 한 행)
 - [ ] 실제 PG 결제 연동 (토스페이먼츠 등) 및 에스크로 정산 배치
 - [ ] 튜터 자격 검증(서류 업로드), 신원 확인
 - [ ] 튜터-학부모 1:1 채팅, 수업 일정 캘린더

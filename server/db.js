@@ -1,6 +1,6 @@
-// 아주 단순한 JSON 파일 DB.
-// 데모용이라 네이티브 의존성 없이 clone → npm install → npm start 만으로 돌아가게 했습니다.
-// 실제 서비스 단계에서는 PostgreSQL 등으로 교체하세요 (이 파일의 인터페이스만 맞추면 됩니다).
+// 저장소.
+// - DATABASE_URL 이 있으면 PostgreSQL (server/pg-store.js)
+// - 없으면 JSON 파일 (로컬 개발, Codespaces 용). 클라우드 무료 플랜에서는 재시작 시 지워집니다.
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -10,6 +10,7 @@ const EMPTY = () => ({ users: [], sessions: [], tutors: [], bookings: [], posts:
 class Store {
   constructor(file) {
     this.file = file; // null 이면 메모리 전용 (테스트용)
+    this.kind = file ? 'file' : 'memory';
     this.data = EMPTY();
     if (file && fs.existsSync(file)) {
       this.data = { ...EMPTY(), ...JSON.parse(fs.readFileSync(file, 'utf8')) };
@@ -52,6 +53,21 @@ class Store {
   }
 
   isEmpty() { return this.data.users.length === 0; }
+
+  reset() { this.data = EMPTY(); this.save(); }
+  async load() { return this; }
+  async flush() {}
+  async close() {}
 }
 
-module.exports = { Store };
+// 환경변수를 보고 알맞은 저장소를 열어 줍니다.
+async function openStore() {
+  if (process.env.DATABASE_URL) {
+    const { PgStore } = require('./pg-store');
+    return new PgStore(process.env.DATABASE_URL).load();
+  }
+  const file = process.env.DB_FILE || path.join(__dirname, '..', 'data', 'db.json');
+  return new Store(file);
+}
+
+module.exports = { Store, EMPTY, openStore };

@@ -80,12 +80,13 @@ function seed(db) {
 module.exports = { seed };
 
 if (require.main === module) {
-  const path = require('path');
-  const fs = require('fs');
-  const { Store } = require('./db');
-  const file = process.env.DB_FILE || path.join(__dirname, '..', 'data', 'db.json');
-  if (process.argv.includes('--reset') && fs.existsSync(file)) fs.unlinkSync(file);
-  const db = new Store(file);
-  seed(db);
-  console.log('데모 데이터 생성 완료 →', file);
+  // npm run seed : 저장소를 비우고 데모 데이터를 다시 넣습니다 (DATABASE_URL 이 있으면 Postgres 대상).
+  const { openStore } = require('./db');
+  (async () => {
+    const db = await openStore();
+    db.reset();
+    seed(db);
+    await db.close();
+    console.log(`데모 데이터를 다시 넣었어요 (${db.kind}).`);
+  })().catch(err => { console.error(err); process.exit(1); });
 }

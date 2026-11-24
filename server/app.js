@@ -13,7 +13,7 @@ function createApp(db) {
   const bad = (res, msg, code = 400) => res.status(code).json({ error: msg });
   const str = (v, max = 500) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 
-  api.get('/health', (_req, res) => res.json({ ok: true, name: 'turtley', time: new Date().toISOString() }));
+  api.get('/health', (_req, res) => res.json({ ok: true, name: 'turtley', storage: db.kind, time: new Date().toISOString() }));
 
   // ───────────── 인증 ─────────────
   api.post('/auth/signup', (req, res) => {
