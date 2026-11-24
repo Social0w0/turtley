@@ -3,6 +3,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { hashPassword, verifyPassword, publicUser, attachUser, requireAuth } = require('./auth');
 const { PLANS, PLATFORM_FEE_RATE, quote } = require('./pricing');
+const { LEVELS, AGES, isLevel, isAge } = require('./groups');
 
 function createApp(db) {
   const app = express();
@@ -26,7 +27,11 @@ function createApp(db) {
     if (db.find('users', u => u.email === email)) return bad(res, '이미 가입된 이메일이에요.', 409);
 
     const { salt, hash } = hashPassword(password);
-    const user = db.insert('users', { name, email, role, salt, passwordHash: hash, region: str(req.body.region, 30) || '서울' });
+    const child = role === 'parent' ? {
+      childLevel: isLevel(req.body.childLevel) ? req.body.childLevel : null,
+      childAge: isAge(req.body.childAge) ? req.body.childAge : null,
+    } : {};
+    const user = db.insert('users', { name, email, role, salt, passwordHash: hash, region: str(req.body.region, 30) || '서울', ...child });
     if (role === 'tutor') {
       db.insert('tutors', {
         userId: user.id, name, intro: '안녕하세요! 천천히, 함께 가는 튜터입니다.',
@@ -59,6 +64,23 @@ function createApp(db) {
   api.get('/me', requireAuth(), (req, res) => {
     const tutor = db.find('tutors', t => t.userId === req.user.id);
     res.json({ user: publicUser(req.user), tutor: tutor || null });
+  });
+
+  // 내 정보 수정: 지역, (학부모) 아이 단계와 나이대
+  api.patch('/me', requireAuth(), (req, res) => {
+    const patch = {};
+    if (req.body.region !== undefined) patch.region = str(req.body.region, 30) || req.user.region;
+    if (req.user.role === 'parent') {
+      if (req.body.childLevel !== undefined) {
+        if (req.body.childLevel !== null && !isLevel(req.body.childLevel)) return bad(res, '아이 단계를 다시 골라 주세요.');
+        patch.childLevel = req.body.childLevel;
+      }
+      if (req.body.childAge !== undefined) {
+        if (req.body.childAge !== null && !isAge(req.body.childAge)) return bad(res, '아이 나이대를 다시 골라 주세요.');
+        patch.childAge = req.body.childAge;
+      }
+    }
+    res.json({ user: publicUser(db.update('users', req.user.id, patch)) });
   });
 
   // ───────────── 튜터 (직접 선택형 매칭) ─────────────
@@ -170,10 +192,24 @@ function createApp(db) {
     ...p, likeCount: p.likes.length, liked: !!user && p.likes.includes(user.id), likes: undefined,
   });
 
+  // 단락 목록: 단계별 글 수 + 나이대
+  api.get('/community/groups', (_req, res) => {
+    const posts = db.all('posts');
+    res.json({
+      levels: LEVELS.map(l => ({ ...l, postCount: posts.filter(p => p.level === l.key).length })),
+      ages: AGES,
+      total: posts.length,
+    });
+  });
+
   api.get('/posts', (req, res) => {
     const tag = str(req.query.tag, 20);
     const region = str(req.query.region, 20);
+    const level = str(req.query.level, 20);
+    const age = str(req.query.age, 20);
     let list = db.all('posts');
+    if (level) list = list.filter(p => p.level === level);
+    if (age) list = list.filter(p => p.age === age);
     if (tag) list = list.filter(p => p.tag === tag);
     if (region) list = list.filter(p => p.region === region);
     list = [...list].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -188,6 +224,8 @@ function createApp(db) {
       userId: req.user.id, authorName: req.user.name, authorRole: req.user.role,
       region: str(req.body.region, 20) || req.user.region || '전국',
       tag: TAGS.includes(req.body.tag) ? req.body.tag : '한걸음',
+      level: isLevel(req.body.level) ? req.body.level : (req.user.childLevel || 'observing'),
+      age: isAge(req.body.age) ? req.body.age : (req.user.childAge || null),
       content, likes: [], comments: [],
     });
     res.status(201).json({ post: viewPost(post, req.user) });

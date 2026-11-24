@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { Store } = require('../server/db');
 const { seed } = require('../server/seed');
+const { LEVELS, AGES } = require('../server/groups');
 
 const root = path.join(__dirname, '..');
 const read = f => fs.readFileSync(path.join(root, f), 'utf8');
@@ -48,7 +49,7 @@ let html = read('public/index.html')
   .replace('<link rel="stylesheet" href="/style.css" />', `${fonts}\n<style>\n${css}</style>`)
   .replace('<link rel="icon" href="/turtle.svg" type="image/svg+xml" />', `<link rel="icon" href="${svgUri}" type="image/svg+xml" />`)
   .replace('<script src="/app.js"></script>',
-    `<script>window.__SEED = ${safe(JSON.stringify(data))};</script>\n`
+    `<script>window.__SEED = ${safe(JSON.stringify(data))};\nwindow.__GROUPS = ${safe(JSON.stringify({ levels: LEVELS, ages: AGES }))};</script>\n`
     + `<script>\n${safe(read('scripts/preview-mock.js'))}\n</script>\n`
     + `<script>\n${safe(read('public/app.js').replaceAll('/turtle.svg', svgUri))}\n</script>`)
   .replaceAll('/turtle.svg', svgUri)

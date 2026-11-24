@@ -103,3 +103,37 @@ test('signup as tutor creates a tutor profile', async () => {
   assert.equal(me.data.tutor.name, '새튜터');
   assert.equal((await call('/auth/signup', { method: 'POST', body: { name: 'x', email: 'new@turtley.dev', password: 'secret1' } })).status, 409);
 });
+
+test('community: 단계별 단락 목록과 글 수', async () => {
+  const { data } = await call('/community/groups');
+  assert.deepEqual(data.levels.map(l => l.key), ['observing', 'borderline', 'mild', 'moderate']);
+  const borderline = data.levels.find(l => l.key === 'borderline');
+  const { data: list } = await call('/posts?level=borderline');
+  assert.equal(borderline.postCount, list.posts.length);
+  assert.ok(list.posts.every(p => p.level === 'borderline'));
+  assert.ok(data.ages.length >= 4);
+});
+
+test('community: 단계 + 나이대 필터', async () => {
+  const { data } = await call('/posts?level=borderline&age=lower');
+  assert.ok(data.posts.length > 0);
+  assert.ok(data.posts.every(p => p.level === 'borderline' && p.age === 'lower'));
+  const none = await call('/posts?level=moderate&age=preschool');
+  assert.equal(none.data.posts.length, 0);
+});
+
+test('아이 단계 설정 → 글 기본 단락으로 사용', async () => {
+  const token = await login('parent3@turtley.dev');
+  assert.equal((await call('/me', { method: 'PATCH', token, body: { childLevel: 'nope' } })).status, 400);
+  const r = await call('/me', { method: 'PATCH', token, body: { childLevel: 'mild', childAge: 'lower' } });
+  assert.equal(r.data.user.childLevel, 'mild');
+  const { data } = await call('/posts', { method: 'POST', token, body: { content: '기본 단락 테스트' } });
+  assert.equal(data.post.level, 'mild');
+  assert.equal(data.post.age, 'lower');
+  const picked = await call('/posts', { method: 'POST', token, body: { content: '직접 고른 단락', level: 'observing', age: 'preschool' } });
+  assert.equal(picked.data.post.level, 'observing');
+  // 튜터는 아이 정보를 바꿀 수 없음 (무시)
+  const tutor = await login('tutor@turtley.dev');
+  const t = await call('/me', { method: 'PATCH', token: tutor, body: { childLevel: 'mild' } });
+  assert.equal(t.data.user.childLevel, undefined);
+});

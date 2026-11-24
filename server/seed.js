@@ -3,13 +3,17 @@ const { hashPassword } = require('./auth');
 const { quote } = require('./pricing');
 
 function seed(db) {
-  const mkUser = (name, email, role, region) => {
+  const mkUser = (name, email, role, region, extra = {}) => {
     const { salt, hash } = hashPassword('demo1234');
-    return db.insert('users', { name, email, role, region, salt, passwordHash: hash });
+    return db.insert('users', { name, email, role, region, salt, passwordHash: hash, ...extra });
   };
 
-  const parent = mkUser('김하늘(하준맘)', 'parent@turtley.dev', 'parent', '광진구');
-  const parent2 = mkUser('박서연(지우아빠)', 'parent2@turtley.dev', 'parent', '수원시');
+  // 학부모: 아이 단계(childLevel)와 나이대(childAge)를 가지고 있음 → 커뮤니티 기본 단락
+  const parent = mkUser('김하늘(하준맘)', 'parent@turtley.dev', 'parent', '광진구', { childLevel: 'borderline', childAge: 'lower' });
+  const parent2 = mkUser('박서연(지우아빠)', 'parent2@turtley.dev', 'parent', '수원시', { childLevel: 'borderline', childAge: 'lower' });
+  const parent3 = mkUser('이도윤(서아맘)', 'parent3@turtley.dev', 'parent', '송파구', { childLevel: 'observing', childAge: 'preschool' });
+  const parent4 = mkUser('정민호(유준아빠)', 'parent4@turtley.dev', 'parent', '대구 수성구', { childLevel: 'mild', childAge: 'upper' });
+  const parent5 = mkUser('강수진(예린맘)', 'parent5@turtley.dev', 'parent', '인천 연수구', { childLevel: 'moderate', childAge: 'teen' });
 
   const tutorDefs = [
     { name: '이은정', email: 'tutor@turtley.dev', region: '광진구', subjects: ['국어', '사회성'], online: true,
@@ -48,19 +52,30 @@ function seed(db) {
   });
 
   // 커뮤니티 샘플
+  // [작성자, 단계, 나이대, 주제, 내용] (오래된 글부터)
   const posts = [
-    [parent2, '수원시', '한걸음', '지우가 오늘 처음으로 혼자 버스 카드를 찍었어요! 3주 동안 연습한 보람이 있네요'],
-    [parent, '광진구', '질문', '9살 아이 받아쓰기, 하루에 몇 문장 정도가 적당할까요? 다들 어떻게 하시는지 궁금해요.'],
-    [parent, '광진구', '모임', '광진구 느린학습자 부모 모임 이번 달 토요일 오전에 어린이대공원 근처에서 해요. 편하게 오세요!'],
-    [parent2, '수원시', '정보', '교육청 경계선지능 학생 지원 사업 신청 기간 공지 떴어요. 학교 상담 선생님께 문의해 보세요.'],
+    [parent5, 'moderate', 'teen', '정보', '고등학교 졸업 후 갈 수 있는 주간보호센터와 직업훈련 과정 정리해 봤어요. 지역마다 대기 기간이 꽤 길어서 미리 알아보시는 게 좋아요.'],
+    [parent4, 'mild', 'upper', '질문', '내년에 중학교 가는데 특수학급이랑 통합학급 중에 고민이에요. 먼저 겪어 보신 분들 이야기 듣고 싶어요.'],
+    [parent3, 'observing', 'preschool', '질문', '6살인데 말이 또래보다 늦고 숫자 개념이 잘 안 잡혀요. 발달 검사는 어디서 받으셨어요? 소아정신과, 발달센터 중에 어디가 먼저일까요?'],
+    [parent2, 'borderline', 'lower', '한걸음', '지우가 오늘 처음으로 혼자 버스 카드를 찍었어요! 3주 동안 연습한 보람이 있네요'],
+    [parent, 'borderline', 'lower', '질문', '9살 아이 받아쓰기, 하루에 몇 문장 정도가 적당할까요? 다들 어떻게 하시는지 궁금해요.'],
+    [parent4, 'mild', 'upper', '한걸음', '유준이가 편의점에서 혼자 물건 사고 거스름돈까지 받아 왔어요. 동전 세는 연습을 몇 달 했는지 몰라요.'],
+    [parent, 'borderline', 'lower', '모임', '광진구 부모 모임 이번 달 토요일 오전에 어린이대공원 근처에서 해요. 경계선 지능 아이 키우시는 분들 편하게 오세요!'],
+    [parent2, 'borderline', 'upper', '정보', '교육청 경계선지능 학생 지원 사업 신청 기간 공지 떴어요. 학교 상담 선생님께 문의해 보세요.'],
+    [parent3, 'observing', 'preschool', '한걸음', '검사 결과 기다리는 중이라 마음이 복잡했는데, 오늘 서아가 처음으로 혼자 양말을 신었어요. 천천히 가 보려고요.'],
   ];
-  posts.forEach(([u, region, tag, content], i) => {
-    const p = db.insert('posts', { userId: u.id, authorName: u.name, authorRole: 'parent', region, tag, content, likes: [], comments: [] });
-    p.createdAt = new Date(Date.now() - (posts.length - i) * 3600e3).toISOString();
+  posts.forEach(([u, level, age, tag, content], i) => {
+    const p = db.insert('posts', { userId: u.id, authorName: u.name, authorRole: 'parent', region: u.region, tag, level, age, content, likes: [], comments: [] });
+    p.createdAt = new Date(Date.now() - (posts.length - i) * 3600e3 * 3).toISOString();
   });
-  const first = db.all('posts')[0];
-  first.likes = [parent.id];
-  first.comments.push({ id: db.id(), userId: parent.id, authorName: parent.name, content: '와 대단해요! 저희도 연습 중이에요', createdAt: new Date().toISOString() });
+  const all = db.all('posts');
+  const bus = all.find(p => p.content.includes('버스 카드'));
+  bus.likes = [parent.id, parent3.id, parent4.id];
+  bus.comments.push({ id: db.id(), userId: parent.id, authorName: parent.name, content: '와 대단해요! 저희도 연습 중이에요', createdAt: new Date().toISOString() });
+  const shop = all.find(p => p.content.includes('편의점'));
+  shop.likes = [parent5.id, parent2.id];
+  shop.comments.push({ id: db.id(), userId: parent5.id, authorName: parent5.name, content: '저희 예린이도 그 연습 오래 했어요. 정말 축하해요.', createdAt: new Date().toISOString() });
+  all.find(p => p.content.includes('발달 검사')).likes = [parent2.id];
 
   // e-도서관 샘플
   const lib = [
