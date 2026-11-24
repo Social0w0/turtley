@@ -40,8 +40,7 @@ const TYPE_NAME = { video: '영상', card: '그림카드', worksheet: '워크북
 
 function avatar(name, size = '') {
   const s = String(name || '?');
-  const n = [...s].reduce((a, c) => a + c.charCodeAt(0), 0) % 5 + 1;
-  return `<span class="avatar ${size} c${n}" aria-hidden="true">${esc(s[0])}</span>`;
+  return `<span class="avatar ${size}" aria-hidden="true">${esc(s[0])}</span>`;
 }
 const shortName = n => String(n).split('(')[0];
 
@@ -169,7 +168,7 @@ async function renderHome() {
     <h3>부모님들 이야기 <a href="#community">전체</a></h3>
     <div class="list">${popular.map(p => `
       <a class="tap" href="#community"><div class="grow">
-        <div class="clamp">${esc(p.content)}</div>
+        <div class="clamp" style="font-weight:500">${esc(p.content)}</div>
         <div class="sub" style="margin-top:4px">${esc(p.region)} ${esc(shortName(p.authorName))}, 공감 ${p.likeCount}</div>
       </div>${chev}</a>`).join('')}</div>
 
@@ -189,9 +188,9 @@ function tutorRow(t) {
     ${avatar(t.name)}
     <div class="grow">
       <div class="row between" style="gap:8px"><span class="name">${esc(t.name)} 튜터</span>
-        <span class="sub" style="white-space:nowrap">${t.reviewCount ? `평점 <b style="color:var(--ink)">${t.rating}</b> (${t.reviewCount})` : '새로 온 튜터'}</span></div>
+        <span class="sub" style="white-space:nowrap">${t.reviewCount ? `평점 <b style="color:var(--ink)">${t.rating}</b>, 후기 ${t.reviewCount}` : '새로 온 튜터'}</span></div>
       <div class="sub">${esc(t.regions[0] || '')}${t.online ? ', 비대면 가능' : ''}</div>
-      <div class="small clamp" style="margin-top:4px;color:var(--ink-2)">${esc(t.intro)}</div>
+      <div class="body2 clamp" style="margin-top:6px">${esc(t.intro)}</div>
       <div class="tags">${t.subjects.map(s => `<span>${esc(s)}</span>`).join('')}</div>
     </div>${chev}</div>`;
 }
@@ -234,7 +233,7 @@ async function showTutor(id) {
     <div class="row" style="gap:14px;margin-bottom:12px">${avatar(t.name, 'lg')}
       <div class="sub"><div>${t.reviewCount ? `평점 <b style="color:var(--ink)">${t.rating}</b>, 후기 ${t.reviewCount}개` : '새로 온 튜터'}</div>
       <div>${esc(t.regions.join(', '))}${t.online ? ', 비대면 가능' : ''}</div></div></div>
-    <p style="margin:0 0 8px">${esc(t.intro)}</p>
+    <p style="margin:0 0 8px;font-size:17px">${esc(t.intro)}</p>
     ${t.career ? `<p class="sub" style="margin:0">${esc(t.career)}</p>` : ''}
     <div class="tags">${[...t.subjects, ...t.tags].map(s => `<span>${esc(s)}</span>`).join('')}</div>
 
@@ -248,8 +247,10 @@ async function showTutor(id) {
         <label class="field" style="flex:1">나이<input name="childAge" type="number" inputmode="numeric" min="3" max="19" placeholder="9"/></label></div>
       <label class="field"><span>튜터에게 미리 알려 줄 것 <span class="hint">선택</span></span><textarea name="message" maxlength="500" placeholder="어려워하는 부분, 집중이 잘 되는 시간대, 좋아하는 것"></textarea></label>
       <div class="receipt" id="receipt"></div>
-      ${role === 'tutor' ? '<p class="sub" style="margin:0">튜터 계정으로는 신청할 수 없어요. 학부모 계정으로 로그인해 주세요.</p>' : ''}
-      <button class="btn" id="bookBtn" ${role === 'tutor' ? 'disabled' : ''}></button>
+      <div class="sheet-foot">
+        ${role === 'tutor' ? '<p class="sub" style="margin:0 0 8px">튜터 계정으로는 신청할 수 없어요. 학부모 계정으로 로그인해 주세요.</p>' : ''}
+        <button class="btn" id="bookBtn" ${role === 'tutor' ? 'disabled' : ''}></button>
+      </div>
     </form>`, root => {
     const draw = () => {
       const p = plans.find(x => x.plan === plan);
@@ -400,9 +401,9 @@ async function renderMe() {
 
   view.innerHTML = `
     <div class="row" style="gap:14px;margin-bottom:20px">${avatar(user.name, 'lg')}
-      <div><div class="name" style="font-size:18px">${esc(user.name)}</div><div class="sub">${isTutor ? '튜터' : '학부모'}, ${esc(user.email)}</div></div></div>
+      <div><div class="name" style="font-size:20px">${esc(user.name)}</div><div class="sub">${isTutor ? '튜터' : '학부모'}, ${esc(user.email)}</div></div></div>
     ${isTutor ? `
-      <div class="ledger"><div><span class="sub">정산 완료</span><b>${won(earn.paid)}</b></div><div><span class="sub">정산 예정</span><b>${won(earn.pending)}</b></div></div>
+      <div class="ledger"><div><span>정산 완료</span><b>${won(earn.paid)}</b></div><div><span>정산 예정</span><b>${won(earn.pending)}</b></div></div>
       <p class="sub" style="margin:0 0 14px">수업 완료를 누르면 수업료의 80%가 정산돼요.</p>
       <button class="btn line" id="editProfile">프로필 수정</button>` : ''}
     <h3>${isTutor ? `받은 신청 ${earn.requests ? `<span class="status requested">새 신청 ${earn.requests}건</span>` : ''}` : '신청한 수업'}</h3>

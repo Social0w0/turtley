@@ -19,8 +19,29 @@ data.sessions = [];
 
 const svgUri = 'data:image/svg+xml;base64,' + Buffer.from(read('public/turtle.svg')).toString('base64');
 const css = read('public/style.css').replace(/^@import url\('\/fonts\/[^']+'\);\n/gm, '');
+// Pretendard 는 구글 폰트에 없어서 파일 안에 넣습니다.
+// fonttools(pyftsubset)가 있으면 자주 쓰는 한글 2,350자로 줄이고(약 0.4MB), 없으면 전체 파일(약 2MB)을 넣어요.
+function pretendardDataUri() {
+  const full = require.resolve('pretendard/dist/web/variable/woff2/PretendardVariable.woff2');
+  let buf = fs.readFileSync(full);
+  try {
+    const os = require('os');
+    const { execFileSync } = require('child_process');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'turtley-'));
+    let chars = '';
+    for (let a = 0xb0; a <= 0xc8; a++) for (let b = 0xa1; b <= 0xfe; b++) chars += new TextDecoder('euc-kr').decode(Uint8Array.of(a, b));
+    for (let c = 0x20; c < 0x7f; c++) chars += String.fromCharCode(c);
+    chars += '…–—‘’“”₩×→';
+    fs.writeFileSync(path.join(dir, 'chars.txt'), chars);
+    const out = path.join(dir, 'p.woff2');
+    execFileSync('pyftsubset', [full, '--text-file=' + path.join(dir, 'chars.txt'), '--flavor=woff2', "--layout-features=*", '--output-file=' + out], { stdio: 'ignore' });
+    buf = fs.readFileSync(out);
+  } catch { console.log('pyftsubset 이 없어 Pretendard 전체 파일을 넣습니다.'); }
+  return 'data:font/woff2;base64,' + buf.toString('base64');
+}
 const fonts = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
-  + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=IBM+Plex+Sans+KR:wght@400;600&display=swap">';
+  + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap">'
+  + `<style>@font-face{font-family:'Pretendard Variable';font-weight:45 920;font-style:normal;font-display:swap;src:url(${pretendardDataUri()}) format('woff2-variations')}</style>`;
 const safe = s => s.replace(/<\/script/gi, '<\\/script');
 
 let html = read('public/index.html')
