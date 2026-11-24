@@ -7,17 +7,24 @@
 경력단절여성 튜터와 느린학습자 가정을 **직접 선택형 1:1 매칭**으로 연결하고,
 **안전거래(에스크로) 결제**, **전국 단위 연합 커뮤니티**, **시청각 e-도서관**을 한 곳에 모은 ALL-IN-ONE 플랫폼입니다.
 
-## 주요 기능
+## 주요 기능 (화면 23개, 모두 서버 API에 연결)
 
-| 기능 | 설명 |
+| 영역 | 화면 · 기능 |
 |---|---|
-| 튜터 찾기 | 과목·지역·비대면 여부·키워드로 필터, 튜터 프로필/후기 확인 후 **직접 선택** |
-| 안전거래 수업 신청 | 월 8회 24만원 / 1회 체험 3.5만원. 결제금은 플랫폼이 보관 → 수업 완료 시 튜터에게 **80%** 정산, 플랫폼 **20%** 중개수수료 |
-| 예약 상태 관리 | `신청됨 → 수업 진행중 → 수업 완료` (튜터 수락/거절, 학부모 취소, 완료 후 후기·별점) |
-| 튜터 정산 대시보드 | 정산 완료 / 정산 예정 금액, 새 신청 건수 |
-| 전국 연합 커뮤니티 | `#한걸음 #질문 #정보 #모임` 태그, 지역 표시, 공감·댓글 |
-| e-도서관 | 그림카드·영상·워크북 등 시청각 학습 자료 (무료/유료) |
-| 회원 | 학부모 / 튜터 역할 분리 가입, 토큰 기반 인증 (scrypt 해시) |
+| 시작 | 첫 화면 · 로그인(데모 계정 바로 보기) · 4단계 회원가입 (보호자/선생님/성인 학습자, 만 14세 미만 법정대리인 동의, 민감정보 별도 동의, 선생님 서류 4종) |
+| 매칭 | 홈 · 튜터 찾기(과목·대상·방식·지역·수업료·정렬 6필터 + 체험 가능) · 선생님 상세(인증 4종, 가능 시간표, 8회 커리큘럼, 후기) · **수업 신청서** 6단계 → 선생님이 먼저 지원 |
+| 예약 · 결제 | 월 4/8/12회 패키지, 선생님 가능 시간 안에서만 선택 · 바우처(`TURTLE10`) · **안전거래**(보관 → 보호자 확인 → 선생님 80% 정산) · 학원법 기준 환불 계산 · 결제 내역/환불 신청/후기 |
+| 배움 | 수업 기록(오늘의 한 걸음, 기분, 집중 시간 추이, 보호자 확인 후 정산, 하트) · e-도서관 12종(단계별, 읽어주기, 저장) |
+| 소통 | 앱 내 채팅(보호자·선생님이 실제로 주고받기, 새 메시지 자동 수신·안 읽은 수·알림, 전화번호 자동 가림, 빠른 답장, 안심센터 문의는 관리자 계정이 답장) · **커뮤니티**: 전국+17개 시·도 채널 × 게시판 6종 × **아이 발달 단계 4 × 나이대 4**, 선생님 답변 배지, 공감·댓글·신고·삭제, 보호자는 닉네임으로만 표시 |
+| 선생님 | 선생님 홈(이번 달 예상 정산, 다가오는 수업, 수업 기록 올리기, 가능 시간 켜고 끄기, 수익 계산기, 인증 진행) · 학생 찾기(신청서에 지원) |
+| 운영 | 관리자: 서류 4종 확인 → 승인해야 목록 공개, 반려, 신고 글 현황 |
+| 접근성 | 쉬운 화면: 글자 3단계, 읽어주기, 움직임 줄이기, 44px 이상 버튼 |
+
+넓은 화면에서는 가운데 iPad 프레임에 앱이, 왼쪽에 화면 목록·역할 전환, 오른쪽에 화면별 설계 노트, 그리고 **플랫폼 분석 리포트**(필수 요건 18, 경쟁 비교, 가격·수익 산출)가 함께 보입니다.
+
+## 소개 페이지
+
+`/intro.html` 은 스크롤하면 장면이 하나씩 넘어가는 서비스 소개 페이지예요 (우리 반 이야기 → 13.59% → 터틀리가 하는 일 → 안심 인증 4단계 → 수업료 → 시작하기). 왼쪽 가운데 눈금으로 지금 위치를 보여줘요.
 
 ## GitHub에서 바로 실행 (Codespaces)
 
@@ -37,39 +44,40 @@ npm install
 npm start          # → http://localhost:3000
 ```
 
-Node.js 18 이상이면 됩니다. 웹폰트(Pretendard, 고운돋움)는 npm 패키지에서 서버가 직접 제공해서 CDN 없이도 동작합니다. `DATABASE_URL`이 없으면 `data/db.json` 파일에 저장하고, 비어 있으면 데모 데이터가 자동으로 들어갑니다.
+Node.js 18 이상이면 됩니다. 웹폰트(Pretendard, 나눔손글씨 펜)는 npm 패키지에서 서버가 직접 제공해서 CDN 없이도 동작합니다. `DATABASE_URL`이 없으면 `data/db.json` 파일에 저장하고, 비어 있으면 데모 데이터가 자동으로 들어갑니다.
 
 | 데모 계정 | 이메일 | 비밀번호 |
 |---|---|---|
 | 학부모 | `parent@turtley.dev` | `demo1234` |
 | 학부모2 | `parent2@turtley.dev` | `demo1234` |
-| 튜터 | `tutor@turtley.dev` (~ `tutor5@`) | `demo1234` |
+| 선생님 | `tutor@turtley.dev` (~ `tutor12@`) | `demo1234` |
+| 관리자 | `admin@turtley.dev` | `demo1234` |
+| 심사 대기 선생님 | `pending1@turtley.dev` (~ `pending3@`) | `demo1234` |
 
 ```bash
 npm run dev     # 파일 변경 시 자동 재시작
 npm run seed    # 데모 데이터 초기화
 npm test        # API 테스트 (node:test)
+npm run preview # 서버 없이 도는 미리보기 → preview/index.html (server/core.js 를 브라우저에서 그대로 실행)
 ```
 
 ## 프로젝트 구조
 
 ```
 turtley/
+├─ shared/constants.js  # 과목·지역·단계·가격·환불 기준 (서버와 화면이 함께 씀)
 ├─ server/
-│  ├─ index.js      # 서버 진입점 (PORT, DB_FILE 환경변수)
-│  ├─ app.js        # Express 앱 + REST API 전체
+│  ├─ core.js       # API 전체 로직 (Express와 미리보기가 같은 코드를 씀)
+│  ├─ app.js        # Express 연결 + 정적 파일
+│  ├─ index.js      # 서버 진입점 (데이터 구조가 바뀌면 데모 데이터로 자동 재설정)
 │  ├─ db.js         # 저장소 선택 (DATABASE_URL → Postgres, 없으면 JSON 파일)
 │  ├─ pg-store.js   # PostgreSQL 저장소
-│  ├─ auth.js       # 비밀번호 해시, 토큰 인증 미들웨어
-│  ├─ pricing.js    # 요금제 · 수수료(20%) 계산
-│  └─ seed.js       # 데모 데이터
-├─ public/          # 프론트엔드 (바닐라 JS SPA, 모바일 UI)
-│  ├─ index.html
-│  ├─ app.js
-│  ├─ style.css     # 디자인 토큰 (깍두기 공책 모티프)
-│  └─ turtle.svg
+│  ├─ auth.js       # scrypt 비밀번호 해시
+│  └─ seed.js       # 데모 데이터 (선생님 12 + 심사 대기 3, 아이 2, 수업 기록, 게시글, 자료 12)
+├─ public/          # 프론트엔드 (바닐라 JS SPA)
+├─ scripts/build-preview.js   # 단일 HTML 미리보기 빌드
 ├─ test/api.test.js
-└─ .github/workflows/ci.yml   # push/PR 시 Node 20·22에서 테스트
+└─ .github/workflows/ci.yml
 ```
 
 ## API 요약
@@ -78,24 +86,22 @@ turtley/
 
 | Method | Path | 권한 | 설명 |
 |---|---|---|---|
-| POST | `/auth/signup` | - | `{name,email,password,role:'parent'\|'tutor',region}` |
-| POST | `/auth/login` | - | `{email,password}` → `{token,user}` |
-| POST | `/auth/logout` | 로그인 | |
-| GET | `/me` | 로그인 | 내 정보 (+튜터 프로필) |
-| GET | `/tutors?subject=&region=&online=&q=` | - | 튜터 목록 |
-| GET | `/tutors/:id` | - | 튜터 상세 |
-| PATCH | `/tutors/me` | 튜터 | 프로필 수정 |
-| GET | `/plans` | - | 요금제 + 수수료 내역 |
-| POST | `/bookings` | 학부모 | `{tutorId,plan,childName,childAge,message}` |
-| GET | `/bookings` | 로그인 | 내 예약 (학부모: 신청한 것 / 튜터: 받은 것) |
-| PATCH | `/bookings/:id` | 로그인 | `{status}` — 튜터: accepted/rejected/completed, 학부모: cancelled |
-| POST | `/bookings/:id/review` | 학부모 | 수업 완료 후 `{rating,text}` |
-| GET | `/tutor/earnings` | 튜터 | 정산 요약 |
-| GET / POST | `/posts` | - / 로그인 | 커뮤니티 목록·작성 (`?tag=&region=`) |
-| POST | `/posts/:id/like` | 로그인 | 공감 토글 |
-| POST | `/posts/:id/comments` | 로그인 | 댓글 |
-| DELETE | `/posts/:id` | 작성자 | 삭제 |
-| GET | `/library?category=&free=` | - | e-도서관 |
+| GET | `/state` | - | 화면에 필요한 상태 한 번에 (역할별: 아이·예약·수업 기록·채팅·신청서·정산·심사 대기) |
+| POST | `/auth/signup` · `/auth/login` · `/auth/logout` · `/auth/demo` | - | 가입(유형별 정보·동의 검증) / 로그인 / 데모 역할 로그인 |
+| PATCH | `/me` | 로그인 | 내 정보 |
+| POST · PATCH | `/kids` · `/kids/:id` | 보호자 | 아이 추가·수정 (특성, 커뮤니티 단계, 나이대) |
+| GET | `/tutors` · `/tutors/:id` | - | 승인된 선생님만, 상세는 후기 포함 |
+| PATCH | `/tutor/avail` | 선생님 | 가능 시간 칸 켜고 끄기 |
+| POST | `/saved/(tutor\|lib)/:id` | 로그인 | 관심 선생님·자료 저장 토글 |
+| POST | `/requests` · `/requests/:id/apply` | 보호자 · 선생님 | 수업 신청서 / 지원 (채팅으로 전달) |
+| POST | `/bookings` | 보호자 | 예약·결제 (패키지, 시간 검증, 바우처, 안전거래 보관) |
+| POST | `/bookings/:id/refund` · `/review` · `/lessons` | 보호자 · 선생님 | 환불 신청 / 후기 / 수업 기록 올리기 |
+| POST | `/lessons/:id/confirm` · `/heart` | 보호자 | 수업 확인(정산 대상) / 하트 |
+| POST · GET | `/threads` · `/threads/:id` · `/threads/:id/messages` | 로그인 | 채팅 (전화번호 자동 가림) |
+| GET · POST | `/posts?region=&board=&level=&age=` | - / 로그인 | 커뮤니티 목록·작성 |
+| GET · POST · DELETE | `/posts/:id` · `/like` · `/comments` · `/report` | 로그인 | 상세 / 공감 / 댓글 / 신고 / 삭제 |
+| GET | `/library` | - | e-도서관 |
+| PATCH · POST | `/admin/tutors/:id/docs` · `/approve` · `/reject` | 관리자 | 서류 확인 → 승인(4종 모두 필요) / 반려 |
 
 ## Render 배포
 
@@ -124,8 +130,9 @@ Render 무료 웹서비스는 디스크가 재시작마다 지워지므로 **반
 - [x] PostgreSQL 저장 (`DATABASE_URL`)
 - [ ] 테이블 분리 + 마이그레이션 (현재는 jsonb 한 행)
 - [ ] 실제 PG 결제 연동 (토스페이먼츠 등) 및 에스크로 정산 배치
-- [ ] 튜터 자격 검증(서류 업로드), 신원 확인
-- [ ] 튜터-학부모 1:1 채팅, 수업 일정 캘린더
+- [x] 튜터 서류 4종 심사 흐름 (지금은 파일 이름만 저장)
+- [x] 앱 내 1:1 채팅
+- [ ] 서류 파일 실제 업로드 · 본인 확인 연동
 - [ ] e-도서관 콘텐츠 뷰어 / 업로드
 - [ ] 모바일 앱 (PWA → React Native)
 

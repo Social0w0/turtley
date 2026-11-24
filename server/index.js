@@ -11,9 +11,15 @@ async function main() {
   if (db.kind === 'file' && process.env.RENDER) {
     console.warn('[db] 주의: Render 에서 DATABASE_URL 없이 실행 중이라 재시작하면 데이터가 초기화됩니다.');
   }
-  if (db.isEmpty()) {
+  // 데이터 구조 버전이 바뀌면(예: v1 → v2) 데모 데이터를 새 구조로 다시 넣습니다.
+  const SCHEMA = 3; // v3: e-도서관 본문·듣기 대본 추가
+  if (db.isEmpty() || db.data.meta?.schema !== SCHEMA) {
+    if (!db.isEmpty()) console.warn(`[db] 데이터 구조가 바뀌어(v${db.data.meta?.schema || 1} → v${SCHEMA}) 데모 데이터를 새로 넣어요.`);
+    db.reset();
     seed(db);
-    console.log('[db] 비어 있어서 데모 데이터를 넣었어요.');
+    db.data.meta = { schema: SCHEMA, seededAt: new Date().toISOString() };
+    db.save();
+    console.log('[db] 데모 데이터를 넣었어요.');
   }
 
   const server = createApp(db).listen(PORT, () => {

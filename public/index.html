@@ -4,45 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>터틀리 · 느린학습자 맞춤형 1:1 교육 플랫폼</title>
-  <meta name="theme-color" content="#ffffff" />
+  <meta name="theme-color" content="#FFFFFF" />
   <link rel="icon" href="/turtle.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <div class="stage">
-    <aside class="pitch">
-      <div class="pitch-logo"><img src="/turtle.svg" alt="" /><h1>터틀리</h1></div>
-      <p class="pitch-sub">느린학습자 아이와 튜터를 1:1로 이어 주는 교육 플랫폼</p>
-      <dl>
-        <div><dt>튜터를 직접 골라요</dt><dd>지역, 과목, 비대면 여부를 보고 부모님이 선택합니다.</dd></div>
-        <div><dt>수업이 끝나야 정산돼요</dt><dd>수업료는 터틀리가 보관하다가 수업 완료 후 튜터에게 80%를 지급합니다.</dd></div>
-        <div><dt>전국 부모님과 이야기해요</dt><dd>사는 동네와 상관없이 같은 고민을 나눌 수 있습니다.</dd></div>
-        <div><dt>보고 따라 하는 자료</dt><dd>그림카드, 짧은 영상, 워크북을 e-도서관에 모았습니다.</dd></div>
-      </dl>
-      <p class="pitch-demo">데모 계정 (비밀번호 <b>demo1234</b>)<br/>
-        학부모 <b>parent@turtley.dev</b><br/>튜터 <b>tutor@turtley.dev</b></p>
-    </aside>
-
-    <div class="phone">
-      <header class="topbar">
-        <a class="logo" href="#/"><img src="/turtle.svg" alt="" /><span>터틀리</span></a>
-        <a class="icon-btn" href="#/me" aria-label="내 정보" id="meBtn"></a>
-      </header>
-      <main id="view" class="view" tabindex="-1"></main>
-      <nav class="tabbar" aria-label="메인 메뉴">
-        <a href="#/" data-tab="home"></a>
-        <a href="#/tutors" data-tab="tutors"></a>
-        <a href="#/community" data-tab="community"></a>
-        <a href="#/library" data-tab="library"></a>
-        <a href="#/me" data-tab="me"></a>
-      </nav>
-      <div id="sheet" class="sheet" hidden>
-        <div class="sheet-backdrop" data-close></div>
-        <div class="sheet-panel" role="dialog" aria-modal="true"><div class="sheet-grip"></div><div id="sheetBody"></div></div>
-      </div>
-      <div id="toast" class="toast" role="status" aria-live="polite"></div>
-    </div>
-  </div>
+  <script src="/shared/constants.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>
