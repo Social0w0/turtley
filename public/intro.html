@@ -104,25 +104,42 @@ h1,h2{margin:0;letter-spacing:-.035em;line-height:1.22;text-wrap:balance}
 .steps4 li.done .n{background:var(--leaf)}
 .steps4 li.now{color:var(--ink)}
 .steps4 li.now p{max-height:80px;opacity:1;margin-top:6px}
-.phone{width:min(320px,100%);margin:0 auto;border-radius:44px;padding:12px;background:linear-gradient(150deg,#2E3328,#14170F);box-shadow:0 30px 70px rgba(38,42,32,.22),inset 0 0 0 2px rgba(255,255,255,.08);transform:rotate(4deg)}
-.scr{background:#fff;border-radius:34px;padding:22px 18px 20px;min-height:440px;display:flex;flex-direction:column;gap:14px}
+.sv-r{perspective:1700px;perspective-origin:30% 40%}
+.phone-wrap{position:relative;width:min(310px,100%);margin:0 auto;transform-style:preserve-3d}
+.phone-wrap::after{content:"";position:absolute;left:8%;right:-6%;bottom:-38px;height:60px;border-radius:50%;background:radial-gradient(closest-side,rgba(30,36,26,.28),transparent);filter:blur(10px);transform:translateZ(-80px)}
+.phone{position:relative;border-radius:54px;padding:4px;transform-style:preserve-3d;transform:rotateY(-18deg) rotateX(4deg) rotateZ(6deg);
+  background:linear-gradient(135deg,#F2F4F7 0%,#A7AEB8 18%,#E9ECF0 34%,#8E96A1 52%,#DADEE4 70%,#9AA1AB 86%,#EEF0F3 100%);
+  box-shadow:-30px 40px 60px rgba(30,36,26,.18),-8px 12px 18px rgba(30,36,26,.12),inset 0 0 0 1px rgba(255,255,255,.7),inset 0 0 0 2px rgba(0,0,0,.18)}
+.phone::before,.phone::after{content:"";position:absolute;width:4px;border-radius:3px;background:linear-gradient(90deg,#7D848E,#C9CED5)}
+.phone::before{left:-3px;top:120px;height:34px;box-shadow:0 48px 0 #A7AEB8,0 0 0 transparent}
+.phone::after{right:-3px;top:150px;height:64px}
+.bez{border-radius:50px;padding:9px;background:#0B0C0A;transform-style:preserve-3d;box-shadow:inset 0 0 0 1.5px #2A2D28}
+.scr{position:relative;background:#F1F3EE;border-radius:42px;padding:62px 16px 24px;min-height:640px;display:flex;flex-direction:column;gap:14px;transform-style:preserve-3d}
+.scr::before{content:"";position:absolute;left:50%;top:11px;width:92px;height:26px;margin-left:-46px;border-radius:14px;background:#0B0C0A}
+.scr::after{content:"";position:absolute;left:50%;bottom:7px;width:110px;height:4px;margin-left:-55px;border-radius:3px;background:rgba(0,0,0,.25)}
+.glare{position:absolute;inset:13px;border-radius:42px;pointer-events:none;background:linear-gradient(118deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,.12) 22%,rgba(255,255,255,0) 40%);transform:translateZ(1px);mix-blend-mode:screen}
 .ph-h{font-size:13px;font-weight:700;color:var(--muted);text-align:center}
 .ph-p{display:flex;align-items:center;gap:12px}
 .ph-p .av{width:48px;height:48px;border-radius:50%;background:var(--leaf);color:#fff;display:grid;place-items:center;font-weight:800;font-size:19px;flex:none}
 .ph-p b{display:block;font-size:17px}.ph-p small{color:var(--muted);font-size:13px}
-.ph-rows{display:grid;gap:8px}
-.pr{display:flex;align-items:center;gap:10px;background:#F7F8F4;border-radius:14px;padding:11px 12px;font-size:14.5px;font-weight:600;transition:background .35s}
+.ph-rows{display:grid;gap:8px;transform-style:preserve-3d}
+.pr{display:flex;align-items:center;gap:10px;background:#fff;border-radius:16px;padding:12px;font-size:14.5px;font-weight:600;box-shadow:0 1px 2px rgba(30,36,26,.05);transition:background .35s,transform .7s cubic-bezier(.2,1.35,.35,1),box-shadow .7s}
 .pr .pi{width:26px;height:26px;border-radius:50%;flex:none;display:grid;place-items:center;background:#E3E5DC;color:#fff;transition:background .35s}
 .pr .pt{flex:1}
 .pr .ps{font-size:12.5px}.pr .ps em{font-style:normal}
 .pr .d,.ph-st .d{display:none}
 .pr .w{color:#A0A296}
-.pr.done{background:#EAF2DE}.pr.done .pi{background:var(--leaf)}
+.pr.done{background:#fff}.pr.done .pi{background:var(--leaf)}
 .pr.done .w{display:none}.pr.done .d{display:inline;color:var(--leaf);font-weight:700}
-.pr.now{box-shadow:0 0 0 2px var(--leaf)}
-.ph-st{margin-top:auto;text-align:center;font-size:14px;font-weight:700;color:#A0A296;padding:12px;border-radius:14px;background:#F7F8F4;transition:.35s}
+/* 지금 확인된 줄은 화면 밖으로 튀어나왔다가, 다음 줄이 오면 제자리로 */
+.pr.now{transform:translate3d(-46px,-4px,90px) scale(1.07);box-shadow:0 26px 40px rgba(30,36,26,.2),0 6px 12px rgba(30,36,26,.1)}
+.pr.done .pi svg{animation:ckpop .55s cubic-bezier(.2,1.6,.4,1) both}
+.pr.done .pi{animation:ckring .6s ease-out}
+@keyframes ckpop{0%{transform:scale(0) rotate(-30deg)}100%{transform:none}}
+@keyframes ckring{0%{box-shadow:0 0 0 0 rgba(61,123,53,.45)}100%{box-shadow:0 0 0 12px rgba(61,123,53,0)}}
+.ph-st{margin-top:auto;text-align:center;font-size:14px;font-weight:700;color:#A0A296;padding:13px;border-radius:16px;background:#ECEEE8;transition:background .35s,color .35s,transform .7s cubic-bezier(.2,1.35,.35,1),box-shadow .7s}
 .ph-st svg{width:16px;height:16px;vertical-align:-3px;margin-right:4px}
-.ph-st.ok{background:var(--leaf);color:#fff}.ph-st.ok .w{display:none}.ph-st.ok .d{display:inline}
+.ph-st.ok{background:var(--leaf);color:#fff;transform:translate3d(-30px,0,70px) scale(1.05);box-shadow:0 24px 40px rgba(46,101,40,.35)}.ph-st.ok .w{display:none}.ph-st.ok .d{display:inline}
 
 /* 6. 돈의 흐름 막대 */
 .split .inner{max-width:760px}
@@ -165,7 +182,10 @@ main{position:relative;z-index:1}
 .disc .f{background:radial-gradient(circle at 35% 30%,var(--c1),var(--c2));color:var(--c3);transform:translateZ(5px);box-shadow:inset 0 0 0 calc(var(--s) * .06) rgba(255,255,255,.35)}
 .disc .b{background:radial-gradient(circle at 35% 30%,var(--c1),var(--c2));color:var(--c3);transform:rotateY(180deg) translateZ(5px)}
 .disc .e{background:var(--c2);transform:translateZ(0);filter:brightness(.82)}
-@media (max-width:760px){.sprites{perspective:700px}.sp[data-s="4"]{display:none}}
+.sp[data-s="4"]{display:none}
+@media (max-width:760px){.sprites{perspective:700px}}
+/* 진행 눈금이 본문과 겹치지 않게: 좌우 여백이 좁은 화면에선 본문을 살짝 안쪽으로 */
+@media (min-width:761px) and (max-width:1199px){.inner{padding-left:64px}}
 @media (prefers-reduced-motion:reduce){.sprites{display:none}}
 @media (max-width:760px){
   .cards{grid-template-columns:1fr;gap:10px}
@@ -178,7 +198,7 @@ main{position:relative;z-index:1}
   .sv h2{margin-bottom:14px}
   .steps4 li{padding:11px 0}
   .steps4 li.now p{max-height:70px}
-  .phone{display:none}
+  .phone-wrap{display:none}
   .sv-r{display:block}
   .top .brand b{display:none}
   .meter{height:64px}
@@ -251,12 +271,12 @@ main{position:relative;z-index:1}
         <ol class="steps4 reveal" data-at=".14" id="steps4"><li data-i="0"><b><span class="n">1</span>본인 확인</b><p>신분증과 얼굴로 본인인지 확인해요. 프로필 이름과 같아야 해요.</p></li><li data-i="1"><b><span class="n">2</span>성범죄·아동학대 경력 조회</b><p>경찰서에서 받은 회신서로 취업 제한 대상이 아닌지 확인해요.</p></li><li data-i="2"><b><span class="n">3</span>개인과외교습자 신고</b><p>교육청에 신고된 교습자인지 확인해요. 대학 재학생은 예외예요.</p></li><li data-i="3"><b><span class="n">4</span>자격·경력 증빙</b><p>자격증과 가르친 경력을 서류로 확인해요.</p></li></ol>
       </div>
       <div class="sv-r reveal" data-at=".14">
-        <div class="mini4"><span data-i="0"><svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg>신분증</span><span data-i="1"><svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg>경력 조회</span><span data-i="2"><svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg>교습자 신고</span><span data-i="3"><svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg>자격·경력</span></div><div class="phone"><div class="scr">
+        <div class="mini4"><span data-i="0"><svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg>신분증</span><span data-i="1"><svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg>경력 조회</span><span data-i="2"><svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg>교습자 신고</span><span data-i="3"><svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg>자격·경력</span></div><div class="phone-wrap"><div class="phone"><div class="bez"><div class="scr">
           <div class="ph-h">선생님 심사</div>
           <div class="ph-p"><span class="av">지</span><div><b>지은 선생님</b><small>서울 마포구 · 한글·읽기</small></div></div>
           <div class="ph-rows"><div class="pr" data-i="0"><span class="pi"><svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg></span><span class="pt">본인 확인</span><span class="ps"><em class="w">확인 중</em><em class="d">확인 완료</em></span></div><div class="pr" data-i="1"><span class="pi"><svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg></span><span class="pt">성범죄·아동학대 경력 조회</span><span class="ps"><em class="w">확인 중</em><em class="d">확인 완료</em></span></div><div class="pr" data-i="2"><span class="pi"><svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg></span><span class="pt">개인과외교습자 신고</span><span class="ps"><em class="w">확인 중</em><em class="d">확인 완료</em></span></div><div class="pr" data-i="3"><span class="pi"><svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg></span><span class="pt">자격·경력 증빙</span><span class="ps"><em class="w">확인 중</em><em class="d">확인 완료</em></span></div></div>
           <div class="ph-st"><span class="w">아직 목록에 보이지 않아요</span><span class="d"><svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.5 12.5l4.2 4.2L18.5 7.8"/></svg>목록에 공개됐어요</span></div>
-        </div></div>
+        </div></div><div class="glare"></div></div></div>
       </div>
     </div></div>
   </section>
