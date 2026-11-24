@@ -240,7 +240,7 @@ function createApp(db) {
   const pub = path.join(__dirname, '..', 'public');
   // 웹폰트는 npm 패키지에서 바로 서빙 (CDN 의존 없음)
   const fontDir = (pkg, sub = '') => path.join(path.dirname(require.resolve(pkg + '/package.json')), sub);
-  app.use('/fonts/pretendard', express.static(fontDir('pretendard', 'dist/web/variable'), { maxAge: '30d' }));
+  app.use('/fonts/plex', express.static(fontDir('@fontsource/ibm-plex-sans-kr'), { maxAge: '30d' }));
   app.use('/fonts/gowun', express.static(fontDir('@fontsource/gowun-dodum'), { maxAge: '30d' }));
   app.use(express.static(pub));
   app.get(/^\/(?!api).*/, (_req, res) => res.sendFile(path.join(pub, 'index.html')));

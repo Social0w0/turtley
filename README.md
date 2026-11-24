@@ -37,7 +37,7 @@ npm install
 npm start          # → http://localhost:3000
 ```
 
-Node.js 18 이상이면 됩니다. 웹폰트(Pretendard, 고운돋움)는 npm 패키지에서 서버가 직접 제공해서 CDN 없이도 동작합니다. `DATABASE_URL`이 없으면 `data/db.json` 파일에 저장하고, 비어 있으면 데모 데이터가 자동으로 들어갑니다.
+Node.js 18 이상이면 됩니다. 웹폰트(IBM Plex Sans KR, 고운돋움)는 npm 패키지에서 서버가 직접 제공해서 CDN 없이도 동작합니다. `DATABASE_URL`이 없으면 `data/db.json` 파일에 저장하고, 비어 있으면 데모 데이터가 자동으로 들어갑니다.
 
 | 데모 계정 | 이메일 | 비밀번호 |
 |---|---|---|
@@ -49,6 +49,7 @@ Node.js 18 이상이면 됩니다. 웹폰트(Pretendard, 고운돋움)는 npm �
 npm run dev     # 파일 변경 시 자동 재시작
 npm run seed    # 데모 데이터 초기화
 npm test        # API 테스트 (node:test)
+npm run preview # 서버 없이 도는 UI 미리보기 → preview/index.html (가짜 API, 새로고침하면 초기화)
 ```
 
 ## 프로젝트 구조
