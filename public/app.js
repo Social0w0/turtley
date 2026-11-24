@@ -211,7 +211,7 @@ const gradeToAge = g => !g ? null : g === '미취학' ? 'preschool' : /초등 [1
 /* ===================== 상태: 서버 데이터(S) + 화면 설정(UI) ===================== */
 const UIKEY = 'turtley-ui-v2', TOKKEY = 'turtley-token-v2';
 const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch { /* 저장 불가 환경 */ } } };
-const freshUI = () => ({ fs: 1, read: false, motion: false, seen: false, f: { q: '', subj: '', tg: '', mode: '', region: '', price: PRICE_MAX, trial: false, sort: 'rec' }, lf: { q: '', cat: '', lv: 0 }, cf: { region: '전국', board: '전체', level: null, age: '' }, sf: 'mine', draft: null, lastPaid: null, next: null, loginNote: false });
+const freshUI = () => ({ fs: 1, theme: 'auto', read: false, motion: false, seen: false, f: { q: '', subj: '', tg: '', mode: '', region: '', price: PRICE_MAX, trial: false, sort: 'rec' }, lf: { q: '', cat: '', lv: 0 }, cf: { region: '전국', board: '전체', level: null, age: '' }, sf: 'mine', draft: null, lastPaid: null, next: null, loginNote: false });
 let UI;
 try { UI = Object.assign(freshUI(), JSON.parse(store.get(UIKEY) || '{}')); } catch { UI = freshUI(); }
 const saveUI = () => store.set(UIKEY, JSON.stringify(UI));
@@ -293,7 +293,7 @@ function speak(text, el) {
   } catch { toast('읽어주기를 시작하지 못했어요'); }
 }
 function stopSpeak() { if (PL.playing && !PL.item?.music) return; try { canSpeak && speechSynthesis.cancel(); } catch { /* ignore */ } }
-function applyA11y() { document.documentElement.style.setProperty('--fs', UI.fs); document.documentElement.dataset.motion = UI.motion ? 'reduce' : ''; applyRead(); }
+function applyA11y() { document.documentElement.style.setProperty('--fs', UI.fs); document.documentElement.dataset.theme = UI.theme === 'dark' || UI.theme === 'light' ? UI.theme : ''; document.documentElement.dataset.motion = UI.motion ? 'reduce' : ''; applyRead(); }
 function applyRead() { $('.screen') && $('.screen').classList.toggle('reading', !!UI.read); }
 
 
@@ -952,7 +952,7 @@ function vCommunity() {
     $('#fopen').onclick = () => commFilterSheet();
     $$('[data-rm]').forEach(b => b.onclick = () => { const k = b.dataset.rm; if (k === 'level' || k === 'all') cf.level = ''; if (k === 'age' || k === 'all') cf.age = ''; if (k === 'region' || k === 'all') cf.region = '전국'; saveUI(); render(); });
     $$('[data-cb]').forEach(b => b.onclick = () => { cf.board = b.dataset.cb; saveUI(); $$('[data-cb]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); draw(); });
-    $('#wr').onclick = writeSheet; await draw();
+    const wr = $('#wr'); layer.appendChild(wr); wr.onclick = writeSheet; await draw(); // 버튼은 스크롤과 상관없이 화면 한 곳에 고정
   } };
 }
 // 커뮤니티 조건 고르기: 고르는 동안은 바로 바뀌지 않고, 아래 버튼에 몇 개 글이 나오는지 보여준 뒤 한 번에 적용
@@ -1068,7 +1068,7 @@ function libSheet(id, cb) {
 function vMy() {
   const u = me(), r = role();
   const row = (g, i, bg, t, sub, extra = '') => `<button class="row" ${g.startsWith('#') ? `id="${g.slice(1)}"` : `data-go="${g}"`}><span class="ri" style="background:${bg}">${ic(i, 18)}</span><span class="rt">${t}${sub ? `<small>${sub}</small>` : ''}</span>${extra}<span class="chev">${ic('chevR', 18)}</span></button>`;
-  const common = `<div class="sec"><div class="list"><a class="row" href="${INTRO}" target="_blank" rel="noopener"><span class="ri">${ic('sprout', 18)}</span><span class="rt">터틀리 소개<small>어떤 서비스인지 한눈에 보기</small></span><span class="chev">${ic('chevR', 18)}</span></a>${row('easy', 'text', '#5E604F', '쉬운 화면', `글자 ${['보통', '크게', '아주 크게'][[1, 1.15, 1.3].indexOf(UI.fs)] || '보통'} · 읽어주기 ${UI.read ? '켬' : '끔'}`)}${row('#myrpt', 'report', '#2F7468', '플랫폼 분석 리포트', '시장 · 필수 요건 · 가격·수익 산출')}${u ? row('#center', 'shield', '#4F7A5A', '터틀리 안심센터', '신고 · 환불 · 이용 문의') : ''}</div></div>`;
+  const common = `<div class="sec"><div class="list"><a class="row" href="${INTRO}" target="_blank" rel="noopener"><span class="ri">${ic('sprout', 18)}</span><span class="rt">터틀리 소개<small>어떤 서비스인지 한눈에 보기</small></span><span class="chev">${ic('chevR', 18)}</span></a>${row('easy', 'text', '#5E604F', '쉬운 화면', `화면 색 ${({ light: '밝게', dark: '어둡게' })[UI.theme] || '기기 설정대로'} · 글자 ${['보통', '크게', '아주 크게'][[1, 1.15, 1.3].indexOf(UI.fs)] || '보통'} · 읽어주기 ${UI.read ? '켬' : '끔'}`)}${row('#myrpt', 'report', '#2F7468', '플랫폼 분석 리포트', '시장 · 필수 요건 · 가격·수익 산출')}${u ? row('#center', 'shield', '#4F7A5A', '터틀리 안심센터', '신고 · 환불 · 이용 문의') : ''}</div></div>`;
   if (!u) return { title: '마이', html: `<div class="lt"><h1>마이</h1></div><div class="me"><img src="${TURTLE}" alt="" style="width:64px"><div><b>반가워요!</b><small>로그인하면 아이에게 맞는 선생님을 추천해요</small></div></div>
   <div class="sec" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn" data-go="login">로그인</button><button class="btn ghost" data-go="signup">회원가입</button></div>${common}`, mount() { $('#myrpt').onclick = openReport; } };
   const lbl = { parent: '보호자', tutor: '선생님', admin: '관리자' }[r]; const bk = S.bookings.find(b => b.status === 'active');
@@ -1176,10 +1176,12 @@ function vEasy() {
   return { title: '쉬운 화면', html: `${backBar('쉬운 화면', 'my')}
  <div class="sec" style="margin-top:8px"><div class="easy-prev"><p class="hand" style="font-size:30px;color:var(--ink2);margin:0 0 4px">미리 보기</p><p style="margin:0;font-size:17px" data-say>오늘은 받침 없는 글자 다섯 개를 읽어요. 다 읽으면 선생님이 박수를 쳐 줄 거예요.</p></div></div>
  <div class="sec">${secH('글자 크기')}<div class="seg" style="margin:0" role="group" aria-label="글자 크기">${[[1, '보통'], [1.15, '크게'], [1.3, '아주 크게']].map(([v, n]) => `<button data-fs="${v}" aria-pressed="${UI.fs === v}">${n}</button>`).join('')}</div></div>
+ <div class="sec">${secH('화면 색')}<div class="seg" style="margin:0" role="group" aria-label="화면 색">${[['auto', '기기 설정대로'], ['light', '밝게'], ['dark', '어둡게']].map(([v, n]) => `<button data-th="${v}" aria-pressed="${(UI.theme || 'auto') === v}">${n}</button>`).join('')}</div></div>
  <div class="sec"><div class="list"><div class="row"><span class="ri" style="background:#3D7B35">${ic('vol', 18)}</span><span class="rt">읽어주기<small>켜면 글을 누를 때 소리로 읽어요</small></span><label class="sw"><input type="checkbox" id="rd" ${UI.read ? 'checked' : ''} aria-label="읽어주기"><span></span></label></div>
   <div class="row"><span class="ri" style="background:#3A7568">${ic('eye', 18)}</span><span class="rt">움직임 줄이기<small>화면 전환 효과를 꺼요</small></span><label class="sw"><input type="checkbox" id="mo" ${UI.motion ? 'checked' : ''} aria-label="움직임 줄이기"><span></span></label></div></div></div>
  <div class="sec"><button class="btn block ghost" id="try">${ic('vol', 20)}미리 보기 읽어주기</button></div>`,
   mount() {
+    $$('[data-th]').forEach(b => b.onclick = () => { UI.theme = b.dataset.th; saveUI(); applyA11y(); $$('[data-th]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); });
     $$('[data-fs]').forEach(b => b.onclick = () => { UI.fs = +b.dataset.fs; saveUI(); applyA11y(); $$('[data-fs]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); });
     $('#rd').onchange = e => { UI.read = e.target.checked; saveUI(); applyRead(); toast(UI.read ? '글을 누르면 읽어줘요' : '읽어주기를 껐어요'); };
     $('#mo').onchange = e => { UI.motion = e.target.checked; saveUI(); applyA11y(); }; $('#try').onclick = () => speak($('.easy-prev [data-say]').textContent, $('.easy-prev'));
