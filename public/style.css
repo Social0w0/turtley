@@ -694,3 +694,12 @@ input[type=range]{width:100%;accent-color:var(--tint);min-height:32px}
 .mpdrop span{background:rgba(255,255,255,.92);border-radius:8px;padding:2px 8px}
 .mp.bubble.open{left:12px!important;right:12px!important;top:auto!important;bottom:calc(var(--under,0px) + 10px)!important;width:auto!important}
 .screen:has(#mp:not(.bubble):not(.gone)) .fab{bottom:180px}
+
+/* 듣기 속도 */
+.mp-sp{min-width:52px;height:36px;border-radius:999px;border:1.5px solid var(--tint-line);background:var(--tint-soft);color:var(--tint-text);font-weight:700;font-size:14px;flex:none;padding:0 8px;font-variant-numeric:tabular-nums}
+.mp.bubble .mp-sp{display:none}.mp.bubble.open .mp-sp:not([hidden]){display:block}
+.spd{display:flex;align-items:center;gap:6px;margin-top:10px;flex-wrap:wrap}
+.spd>span{font-size:14px;font-weight:600;color:var(--ink2);margin-right:4px}
+.spd button{min-height:38px;border-radius:999px;border:1px solid transparent;background:var(--cell);color:var(--ink2);padding:0 14px;font-size:14.5px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.spd button small{font-size:11.5px;font-weight:600;opacity:.8}
+.spd button[aria-pressed=true]{background:var(--tint);color:var(--tint-ink)}

@@ -299,6 +299,12 @@ function applyRead() { $('.screen') && $('.screen').classList.toggle('reading', 
 // 듣기 자료(대본)는 한 줄씩 읽고 자막으로 보여줘요. 읽어주기를 못 쓰는 브라우저에서는 자막만 같은 속도로 넘어가요.
 // 음악 자료는 브라우저에서 잔잔한 소리를 만들어 틀어요(파일 없이).
 const PL = { item: null, idx: 0, playing: false, tok: 0, timer: null, au: null, open: false, pos: null };
+// 듣기 속도: 0.5배가 기본(느린학습자에게 편한 속도), 버튼을 누를 때마다 0.5 → 1 → 1.5 → 2배
+const SPEEDS = [0.5, 1, 1.5, 2];
+const plSpeed = () => (SPEEDS.includes(UI.speed) ? UI.speed : 0.5);
+function plSetSpeed(v) { UI.speed = v; saveUI(); if (PL.playing && PL.item && !PL.item.music) ttsLine(); drawMini(); }
+const plNextSpeed = () => plSetSpeed(SPEEDS[(SPEEDS.indexOf(plSpeed()) + 1) % SPEEDS.length]);
+const spTxt = v => (v === 1 ? '1' : v) + '배';
 const koVoice = () => { try { return speechSynthesis.getVoices().some(v => /^ko/i.test(v.lang)); } catch { return false; } };
 function plStart(l) { plStop(true); PL.item = l; PL.idx = 0; PL.open = false; plPlay(); }
 function plPlay() {
@@ -322,11 +328,11 @@ function ttsLine() {
   const next = () => { if (tok !== PL.tok || !PL.playing) return; clearTimeout(PL.timer); PL.idx++; ttsLine(); };
   if (canSpeak && koVoice()) {
     try {
-      speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(line); u.lang = 'ko-KR'; u.rate = .88;
+      speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(line); u.lang = 'ko-KR'; u.rate = plSpeed();
       u.onend = () => setTimeout(next, 350); u.onerror = next; speechSynthesis.speak(u);
-      PL.timer = setTimeout(next, 2500 + line.length * 330); // 소리가 끝났다는 신호가 안 와도 다음 줄로
-    } catch { PL.timer = setTimeout(next, 1000 + line.length * 150); }
-  } else PL.timer = setTimeout(next, 1000 + line.length * 150);
+      PL.timer = setTimeout(next, (2500 + line.length * 330) / plSpeed()); // 소리가 끝났다는 신호가 안 와도 다음 줄로
+    } catch { PL.timer = setTimeout(next, (1000 + line.length * 150) / plSpeed()); }
+  } else PL.timer = setTimeout(next, (1000 + line.length * 150) / plSpeed());
   drawMini();
 }
 // 잔잔한 음악: 네 개의 화음이 천천히 바뀌고, 그 위에 맑은 음이 가끔 울려요
@@ -363,13 +369,14 @@ function drawMini() {
     m = document.createElement('div'); m.id = 'mp'; m.className = 'mp'; m.setAttribute('role', 'region'); m.setAttribute('aria-label', '지금 듣는 자료');
     m.innerHTML = `<button class="mp-art" aria-label="음원 아이콘 (끌어서 옮기거나 아래 X로 가져가면 닫혀요)"><span class="ring"></span><span class="ico"></span></button>
      <div class="mp-body"><button class="mp-t" aria-label="자료 열기"><b></b><small aria-live="polite"></small></button><div class="mp-bar"><i></i></div></div>
-     <button class="mp-pp"></button><button class="mp-x" aria-label="음원 닫기">${ic('x', 18, 2.4)}</button>`;
+     <button class="mp-sp"></button><button class="mp-pp"></button><button class="mp-x" aria-label="음원 닫기">${ic('x', 18, 2.4)}</button>`;
     dock.appendChild(m); bindMini(m);
   }
   m.classList.toggle('bubble', narrow()); m.classList.toggle('open', narrow() && PL.open); m.classList.toggle('playing', PL.playing);
   $('.ring', m).style.background = `conic-gradient(var(--tint) ${deg}deg, var(--tint-line) ${deg}deg)`;
   $('.ico', m).style.cssText = `background:${a[1]};color:${a[2]}`; $('.ico', m).innerHTML = PL.playing ? `<span class="eq"><i></i><i></i><i></i></span>` : ic(PL.item.music ? 'music' : 'headphones', 20, 2);
   $('.mp-t b', m).textContent = PL.item.t; $('.mp-t small', m).textContent = plCaption(); $('.mp-bar i', m).style.width = (p * 100) + '%';
+  const sp = $('.mp-sp', m); sp.hidden = !!PL.item.music; sp.textContent = spTxt(plSpeed()); sp.setAttribute('aria-label', `듣기 속도 ${spTxt(plSpeed())}, 누르면 바뀌어요`);
   const pp = $('.mp-pp', m); pp.innerHTML = ic(PL.playing ? 'pause' : 'play', 20, 2.2); pp.setAttribute('aria-label', PL.playing ? '일시정지' : '재생');
   placeMini();
 }
@@ -384,6 +391,7 @@ function placeMini() {
 }
 function bindMini(m) {
   $('.mp-pp', m).onclick = () => (PL.playing ? plPause() : plPlay());
+  $('.mp-sp', m).onclick = () => plNextSpeed();
   $('.mp-x', m).onclick = () => plStop();
   $('.mp-t', m).onclick = () => { const id = PL.item?.id; PL.open = false; drawMini(); if (id) { if (curRoute !== 'library') go('library'); setTimeout(() => libSheet(id), curRoute === 'library' ? 0 : 120); } };
   // 끌기: 아이콘을 잡고 옮겨요. 끄는 동안 화면 아래에 X가 나타나고, 거기에 놓으면 닫혀요.
@@ -1030,14 +1038,15 @@ function libSheet(id, cb) {
   sheet({ title: l.t, html: `<button class="lcover" id="lcover" style="background:${a[1]};color:${a[2]}" ${canHear ? '' : 'disabled'} aria-label="${canHear ? '듣기 시작' : ''}">${ic(a[0], 84, 1.4)}${canHear ? `<span class="pl">${ic('play', 26, 2)}</span>` : ''}</button>
   <div class="tags" style="margin-bottom:8px"><span class="tag g">${LIBCAT[l.cat]}</span><span class="tag">${l.type}</span><span class="tag">${l.min}분</span><span class="tag b">${l.lv}단계</span></div>
   <p class="para" style="margin:0 0 14px" data-say>${l.d}</p>
-  ${canHear ? `<button class="btn block" id="lhear">${hearTxt()}</button><p class="cap" style="padding:6px 2px 0">다른 화면으로 가도 계속 들려요. 아래 작은 플레이어에서 멈추거나 닫을 수 있어요.</p>` : ''}
+  ${canHear ? `<button class="btn block" id="lhear">${hearTxt()}</button>${l.music ? '' : `<div class="spd" role="radiogroup" aria-label="듣기 속도"><span>듣기 속도</span>${SPEEDS.map(v => `<button role="radio" data-sp="${v}" aria-checked="${plSpeed() === v}" aria-pressed="${plSpeed() === v}">${spTxt(v)}${v === 0.5 ? '<small>기본</small>' : ''}</button>`).join('')}</div>`}<p class="cap" style="padding:6px 2px 0">다른 화면으로 가도 계속 들려요. 아래 작은 플레이어에서 멈추거나 닫을 수 있어요.</p>` : ''}
   ${(l.body || []).map(block).join('')}
   <div class="lb"><h3>따라 하기</h3><ol class="steps">${l.steps.map(x => `<li data-say>${x}</li>`).join('')}</ol></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px"><button class="btn ghost" id="lread">${ic('vol', 20)}글 읽어주기</button><button class="btn line" id="lsave">${sv() ? '저장 취소' : '저장하기'}</button></div>
   ${role() === 'tutor' ? '<button class="btn block" id="luse" style="margin-top:8px">다음 수업에 붙이기</button>' : ''}`,
   mount(sh) {
     const hear = () => { if (isMine()) { PL.playing ? plPause() : plPlay(); } else plStart(l); const h = $('#lhear', sh); if (h) h.innerHTML = hearTxt(); $$('[data-lib]', view).length && cb && cb(); };
-    const hb = $('#lhear', sh); if (hb) hb.onclick = hear; const cv = $('#lcover', sh); if (canHear) cv.onclick = hear;
+    const hb = $('#lhear', sh); if (hb) hb.onclick = hear;
+    $$('[data-sp]', sh).forEach(b => b.onclick = () => { plSetSpeed(+b.dataset.sp); $$('[data-sp]', sh).forEach(x => { const on = x === b; x.setAttribute('aria-pressed', on); x.setAttribute('aria-checked', on); }); }); const cv = $('#lcover', sh); if (canHear) cv.onclick = hear;
     $('#lread', sh).onclick = () => speak(l.t + '. ' + l.d + ' ' + l.steps.map((x, i) => (i + 1) + '단계. ' + x).join(' '), $('.steps', sh));
     $('#lsave', sh).onclick = run(async () => { if (!me()) { toast('로그인하면 저장할 수 있어요'); return; } const r = await api(`/saved/lib/${l.id}`, { method: 'POST' }); await sync(); $('#lsave', sh).textContent = r.saved ? '저장 취소' : '저장하기'; toast(r.saved ? '자료를 저장했어요' : '저장을 취소했어요'); cb && cb(); });
     const u = $('#luse', sh); if (u) u.onclick = () => { const b = S.bookings.find(x => x.status === 'active'); toast(b ? `${b.kid?.name || ''} 다음 수업 자료로 붙였어요` : '진행 중인 수업이 없어요'); };
