@@ -92,6 +92,8 @@ for (const f of fs.readdirSync(path.join(root, 'public/img'))) {
   const uri = 'data:image/webp;base64,' + fs.readFileSync(path.join(root, 'public/img', f)).toString('base64');
   html = html.replaceAll('/img/' + f, uri);
 }
+// 미리보기에는 소개 페이지 파일이 없어서, 따로 올려 둔 소개 페이지로 연결해요
+html = html.replace("const INTRO = '/intro.html';", "const INTRO = 'https://claude.ai/artifact/6XJqowADTGk7LMaFDU4vMX';");
 html = html.replace(/^<!doctype html>/i, '<!DOCTYPE html>');
 fs.mkdirSync(path.join(root, 'preview'), { recursive: true });
 fs.writeFileSync(path.join(root, 'preview', 'index.html'), html);

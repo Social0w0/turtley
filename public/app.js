@@ -63,6 +63,7 @@ const IC = {
 };
 const ic = (n, s = 22, w = 1.8) => `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n] || ''}</svg>`;
 const MOOD = { good: { n: '좋았어요', i: 'smile', c: 'var(--tint)' }, ok: { n: '보통이에요', i: 'meh', c: 'var(--orange)' }, hard: { n: '힘들었어요', i: 'frown', c: 'var(--red)' } };
+const INTRO = '/intro.html';
 const TURTLE = '/img/turtle.webp', TURTLE_SM = '/img/turtle-sm.webp', WORDMARK = '/img/wordmark.webp';
 
 /* ===================== 화면별 설계 노트 (오른쪽 패널) ===================== */
@@ -461,7 +462,7 @@ function render() {
   curRoute = r;
   const notab = v.notab ?? NOTAB.has(r);
   view.className = 'view' + (notab ? ' notab' : '');
-  view.innerHTML = `<div class="vin">${v.html}</div>`; view.scrollTop = 0;
+  view.innerHTML = `<div class="vin">${notab || v.notop ? '' : topBar()}${v.html}</div>`; view.scrollTop = 0;
   tabbar.hidden = notab; tabbar.innerHTML = notab ? '' : tabsHTML(r);
   document.title = (v.title ? v.title + ' · ' : '') + '터틀리';
   if (v.mount) Promise.resolve(v.mount(p)).catch(e => toast(e.message));
@@ -469,6 +470,18 @@ function render() {
   if (!firstRender) { const h = $('h1', view) || $('.appbar .t', view); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } }
   firstRender = false;
 }
+function bellSheet() {
+      const items = [];
+      if (role() === 'tutor') { const n = S.lessons.filter(l => !l.confirmed).length; if (n) items.push(['sprout', `보호자 확인을 기다리는 수업 기록 ${n}개`, '확인되면 정산 대상이 돼요']); }
+      else S.lessons.filter(l => !l.confirmed).forEach(l => items.push(['sprout', `${T[l.tutorId]?.name || ''} 선생님이 수업 기록을 올렸어요 · 확인해 주세요`, l.d]));
+      if (role() === 'tutor') { const n = S.requests.filter(r => !r.applied).length; if (n) items.push(['apply', `새 수업 신청서 ${n}건이 열려 있어요`, '학생 찾기에서 지원할 수 있어요']); }
+      else S.requests.forEach(r => Array.isArray(r.apps) && r.apps.length && items.push(['apply', `신청서에 선생님 ${r.apps.length}명이 지원했어요`, ago(r.createdAt)]));
+      if (unreadAll()) items.unshift(['chat', `안 읽은 메시지 ${unreadAll()}개가 있어요`, '채팅에서 확인해 주세요']);
+      sheet({ title: '알림', html: items.length ? `<div class="list">${items.map(([i, t, a]) => `<div class="row"><span class="ri">${ic(i, 18)}</span><span class="rt">${t}<small>${a}</small></span></div>`).join('')}</div>` : `<p class="cap">${me() ? '새 알림이 없어요.' : '로그인하면 수업·신청서 알림을 받아요.'}</p>` });
+}
+// 탭이 있는 모든 화면 위에 같은 머리줄: 로고(홈으로) · 채팅 · 알림
+const topBar = () => { const u = me(); const un = unreadAll() > 0;
+  return `<div class="hello"><button class="wmb" data-go="${role() === 'tutor' ? 'thome' : 'home'}" aria-label="터틀리 홈"><img class="wm" src="${WORDMARK}" alt="터틀리"></button><div style="display:flex"><button class="ib plain" data-go="${u ? 'chat' : 'login'}" aria-label="채팅${un ? `, 안 읽은 메시지 ${unreadAll()}개` : ''}">${ic('chat', 24)}${un ? '<span class="dot"></span>' : ''}</button><button class="ib plain" data-bell aria-label="알림">${ic('bell', 24)}</button></div></div>`; };
 function vGate(need) {
   const nm = { parent: '보호자', tutor: '선생님', admin: '관리자' }[need];
   return { title: '계정 전환', notab: false, html: `<div class="empty" style="padding-top:90px"><img src="${TURTLE}" alt=""><b>${nm} 계정에서 볼 수 있는 화면이에요</b><p>지금은 ${({ parent: '보호자', tutor: '선생님', admin: '관리자' })[role()] || '둘러보기'} 상태예요.</p><button class="btn" style="margin-top:14px" data-demo="${need}">${nm} 데모로 보기</button></div>` };
@@ -695,9 +708,9 @@ function vHome() {
   else nextCard = `<a class="next" href="#tutors"><div><p class="k">처음이라면</p><b>첫 상담은 무료예요</b><span class="m">아이 속도를 아는 선생님과 15분 이야기해 보세요</span><span class="go">선생님 둘러보기${ic('chevR', 16, 2.2)}</span></div><img src="${TURTLE}" alt=""></a>`;
   const unread = unreadAll() > 0;
   return { title: '홈', html: `
- <div class="hello"><img class="wm" src="${WORDMARK}" alt="터틀리"><div style="display:flex"><button class="ib plain" data-go="${u ? 'chat' : 'login'}" aria-label="채팅">${ic('chat', 24)}${unread ? '<span class="dot"></span>' : ''}</button><button class="ib plain" id="bell" aria-label="알림">${ic('bell', 24)}</button></div></div>
  <div class="lt"><h1>${parent && S.kids[0] ? `${esc(k.name)}이에게 맞는<br>선생님을 찾아요` : '느린학습자 아이에게<br>꼭 맞는 1:1 선생님'}</h1><p>${u ? `${esc(u.name)}님, 오늘도 한 걸음씩 가 볼까요?` : '안심 인증을 마친 선생님만 소개해요.'}</p></div>
  <div class="sec">${nextCard}</div>
+ <div class="sec" style="margin-top:-12px"><a class="intro-link" href="${INTRO}" target="_blank" rel="noopener">${ic('sprout', 20)}<span>터틀리가 처음이라면 <b>터틀리 소개 보기</b></span>${ic('chevR', 18)}</a></div>
  <button class="searchbtn" data-go="tutors" data-focus-search>${ic('search', 20)}어떤 도움이 필요하세요?</button>
  <div class="sec">${secH('과목으로 찾기')}<div class="cats tiles">${SUBJECTS.map(s => `<button class="cat" data-subj="${s.id}"><span class="ci">${ic(s.icon, 24)}</span>${s.name}</button>`).join('')}</div></div>
  <div class="sec">${secH('선생님을 만나는 두 가지 방법')}<div class="ways"><a class="way" href="#tutors">${ic('search', 24).replace('class="ic"', 'class="ic lead"')}<span><b>직접 찾기</b><small>조건으로 좁히고 프로필을 비교해서 골라요</small></span><span class="chev">${ic('chevR', 18)}</span></a><a class="way" href="#request">${ic('apply', 24).replace('class="ic"', 'class="ic lead"')}<span><b>수업 신청서 쓰기</b><small>아이 상황을 적어 두면 선생님이 먼저 지원해요</small></span><span class="chev">${ic('chevR', 18)}</span></a></div></div>
@@ -710,12 +723,6 @@ function vHome() {
     $$('[data-subj]', view).forEach(b => b.onclick = () => { UI.f = { ...freshUI().f, subj: b.dataset.subj }; saveUI(); go('tutors'); });
     $('[data-focus-search]', view).addEventListener('click', () => { UI.focusSearch = true; });
     $('#safe').onclick = safeSheet;
-    $('#bell').onclick = () => {
-      const items = [];
-      S.lessons.filter(l => !l.confirmed).forEach(l => items.push(['sprout', `${T[l.tutorId]?.name || ''} 선생님이 수업 기록을 올렸어요 · 확인해 주세요`, l.d]));
-      S.requests.forEach(r => (r.apps || []).length && items.push(['apply', `신청서에 선생님 ${r.apps.length}명이 지원했어요`, ago(r.createdAt)]));
-      sheet({ title: '알림', html: items.length ? `<div class="list">${items.map(([i, t, a]) => `<div class="row"><span class="ri">${ic(i, 18)}</span><span class="rt">${t}<small>${a}</small></span></div>`).join('')}</div>` : '<p class="cap">새 알림이 없어요.</p>' });
-    };
     $$('[data-lib]', view).forEach(b => b.onclick = () => libSheet(b.dataset.lib)); $('#rpt').onclick = openReport;
     const q = parent && k.level ? `?level=${k.level}` : '';
     const { posts } = await api('/posts' + q);
@@ -1061,7 +1068,7 @@ function libSheet(id, cb) {
 function vMy() {
   const u = me(), r = role();
   const row = (g, i, bg, t, sub, extra = '') => `<button class="row" ${g.startsWith('#') ? `id="${g.slice(1)}"` : `data-go="${g}"`}><span class="ri" style="background:${bg}">${ic(i, 18)}</span><span class="rt">${t}${sub ? `<small>${sub}</small>` : ''}</span>${extra}<span class="chev">${ic('chevR', 18)}</span></button>`;
-  const common = `<div class="sec"><div class="list">${row('easy', 'text', '#5E604F', '쉬운 화면', `글자 ${['보통', '크게', '아주 크게'][[1, 1.15, 1.3].indexOf(UI.fs)] || '보통'} · 읽어주기 ${UI.read ? '켬' : '끔'}`)}${row('#myrpt', 'report', '#2F7468', '플랫폼 분석 리포트', '시장 · 필수 요건 · 가격·수익 산출')}${u ? row('#center', 'shield', '#4F7A5A', '터틀리 안심센터', '신고 · 환불 · 이용 문의') : ''}</div></div>`;
+  const common = `<div class="sec"><div class="list"><a class="row" href="${INTRO}" target="_blank" rel="noopener"><span class="ri">${ic('sprout', 18)}</span><span class="rt">터틀리 소개<small>어떤 서비스인지 한눈에 보기</small></span><span class="chev">${ic('chevR', 18)}</span></a>${row('easy', 'text', '#5E604F', '쉬운 화면', `글자 ${['보통', '크게', '아주 크게'][[1, 1.15, 1.3].indexOf(UI.fs)] || '보통'} · 읽어주기 ${UI.read ? '켬' : '끔'}`)}${row('#myrpt', 'report', '#2F7468', '플랫폼 분석 리포트', '시장 · 필수 요건 · 가격·수익 산출')}${u ? row('#center', 'shield', '#4F7A5A', '터틀리 안심센터', '신고 · 환불 · 이용 문의') : ''}</div></div>`;
   if (!u) return { title: '마이', html: `<div class="lt"><h1>마이</h1></div><div class="me"><img src="${TURTLE}" alt="" style="width:64px"><div><b>반가워요!</b><small>로그인하면 아이에게 맞는 선생님을 추천해요</small></div></div>
   <div class="sec" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn" data-go="login">로그인</button><button class="btn ghost" data-go="signup">회원가입</button></div>${common}`, mount() { $('#myrpt').onclick = openReport; } };
   const lbl = { parent: '보호자', tutor: '선생님', admin: '관리자' }[r]; const bk = S.bookings.find(b => b.status === 'active');
@@ -1189,8 +1196,7 @@ function vTHome() {
   const fri = new Date(); fri.setDate(fri.getDate() + ((5 - fri.getDay() + 7) % 7 || 7));
   const avail = new Set(t.slots);
   const pendingTutor = t.status !== 'approved';
-  return { title: '선생님 홈', html: `<div class="hello"><img class="wm" src="${WORDMARK}" alt="터틀리"><div style="display:flex"><button class="ib plain" data-go="chat" aria-label="채팅">${ic('chat', 24)}${unreadAll() ? '<span class="dot"></span>' : ''}</button></div></div>
- <div class="lt"><p class="hand cheer">오늘도 한 걸음, 선생님!</p><h1>${esc(t.name)} 선생님,<br>${upcoming.length ? `다가오는 수업 ${upcoming.length}개예요` : '아직 예약된 수업이 없어요'}</h1></div>
+  return { title: '선생님 홈', html: ` <div class="lt"><p class="hand cheer">오늘도 한 걸음, 선생님!</p><h1>${esc(t.name)} 선생님,<br>${upcoming.length ? `다가오는 수업 ${upcoming.length}개예요` : '아직 예약된 수업이 없어요'}</h1></div>
  ${pendingTutor ? `<div class="sec"><div class="notice">${ic('info', 20)}<span>안심 인증 서류 4종을 확인하고 있어요. 승인되면 튜터 찾기 목록에 공개되고 신청서에 지원할 수 있어요.</span></div></div>` : ''}
  <div class="sec"><div class="calc"><p style="margin:0;font-size:14px;color:var(--muted)">이번 달 예상 정산</p><div class="big">${won(e.expected)}</div><div class="rowc"><span>완료 ${e.done}회 · 남은 ${e.planned}회 × ${won(t.price)} × 80%</span></div><div class="split" style="margin-top:12px"><i class="a" style="width:${e.done / ses * 100}%">완료 ${e.done}</i><i class="b" style="width:${e.planned / ses * 100}%">예정 ${e.planned}</i></div><p class="cap" style="padding:0">다음 정산일 ${fmtD(fri)} · 보호자가 확인한 회차만${e.pending ? ` · 확인 대기 ${e.pending}회` : ''}</p></div></div>
  <div class="sec">${secH('다가오는 수업')}${upcoming.length ? `<div class="list">${upcoming.map(({ b, at }) => `<div class="row"><span class="ri" style="background:var(--tint)">${ic(MODES[b.mode].i, 18)}</span><span class="rt"><b style="font-weight:600">${fmtD(at)} ${fmtH(at.getHours())} · ${esc(b.kid?.name || '')}</b><small>${esc(b.kid?.grade || '')} · ${MODES[b.mode].n} · ${S.lessons.filter(l => l.bookingId === b.id).length}/${b.pkg}회 기록</small></span><button class="btn sm ghost" data-rec="${b.id}">기록</button></div>`).join('')}</div>` : '<p class="cap">예약이 들어오면 여기에 보여요.</p>'}</div>
@@ -1338,6 +1344,7 @@ async function boot() {
     const nv = t.closest('[data-nav]'); if (nv) { navTo(nv.dataset.nav); return; }
     const rl = t.closest('[data-role]'); if (rl) { const r = rl.dataset.role; run(async () => { await loginAs(r); UI.seen = true; saveUI(); toast(({ parent: '보호자', tutor: '선생님', admin: '관리자' })[r] + ' 데모로 바꿨어요'); go(r === 'tutor' ? 'thome' : r === 'admin' ? 'admin' : 'home'); })(); return; }
     if (t.closest('[data-report]')) { openReport(); return; }
+    if (t.closest('[data-bell]')) { bellSheet(); return; }
   });
   $('#skip').onclick = e => { e.preventDefault(); view.focus(); };
   $('#nav-sel').onchange = e => navTo(e.target.value);
