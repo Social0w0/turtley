@@ -67,7 +67,7 @@ const TURTLE = '/img/turtle.webp', TURTLE_SM = '/img/turtle-sm.webp', WORDMARK =
 
 /* ===================== 화면별 설계 노트 (오른쪽 패널) ===================== */
 const NOTES = {
-  welcome: { k: '첫 화면', h: '세 개의 버튼, 한 가지 약속', lead: '처음 온 보호자가 3초 안에 무엇을 하는 곳인지 알게 만들어요.', nums: [['13.59%', '경계선지능 추정 비율'], ['약 697만', '전국 추정 인원']], b: ['<b>시작하기 · 로그인 · 둘러보기</b> 세 버튼만 둬요', '둘러보기는 로그인 없이 끝까지 — 예약·채팅 순간에만 로그인 요청', '첫 화면 문장은 한 가지 약속 — <b>아이 속도에 맞춘 선생님</b>'] },
+  welcome: { k: '첫 화면', h: '세 개의 버튼, 한 가지 약속', lead: '처음 온 보호자가 3초 안에 무엇을 하는 곳인지 알게 만들어요.', nums: [['13.59%', '경계선지능 추정 비율'], ['약 697만', '전국 추정 인원']], b: ['<b>시작하기 · 로그인 · 둘러보기</b> 세 버튼만 둬요', '둘러보기는 로그인 없이 끝까지 — 예약·채팅 순간에만 로그인 요청', '발표자료 손글씨로 <b>“느려도 끝까지”</b> 응원 문구를 고정'] },
   home: { k: '홈', h: '다음 수업 → 찾기 → 신청', lead: '보호자가 매일 여는 화면이라 “오늘 할 일”을 맨 위에 둬요.', nums: [['2가지', '매칭 방식'], ['8개', '과목 카테고리']], b: ['<b>다음 수업 카드</b>에 진행률까지 한 번에', '<b>직접 찾기</b>(조건 필터) + <b>신청서 쓰기</b>(선생님이 지원) 두 갈래 매칭', '과목은 아이콘과 글자를 함께 — 색만으로 구분하지 않아요', '안심 인증 배너를 홈에 상시 노출', '우리 동네(시·도 일치) 선생님 4명을 목록으로 추천'], law: '<b>매칭 원칙</b> 배정형 경쟁사와 달리 보호자가 직접 고름' },
   tutors: { k: '튜터 찾기', h: '조건으로 좁히고, 아이로 고른다', lead: '스펙보다 “이런 아이에게 → 이렇게 가르쳐요”를 카드 중앙에 둬요.', nums: [['6종', '필터 (과목·대상·방식·지역·수업료·정렬)'], ['25,000~', '회당 수업료(원)']], b: ['<b>인증 4단계 미완료 선생님은 목록에 노출하지 않아요</b> (서버에서 걸러요)', '결과 수 표시 + 필터 초기화 한 번에', '경력 공백까지 프로필에 표시 — 경력보유여성의 양육 경험을 경력으로', '체험 수업 가능 여부 배지'], law: '<b>노출 기준</b> 본인 확인 · 성범죄·아동학대 경력 조회 · 개인과외교습자 신고 · 자격 증빙' },
   tutor: { k: '선생님 상세', h: '믿을 근거를 먼저, 가격은 마지막에', lead: '인증 → 수업 방식 → 시간표 → 커리큘럼 → 가격 순서로 읽혀요.', nums: [['4종', '안심 인증'], ['8회', '월 커리큘럼']], b: ['하단 고정 버튼: <b>상담하기 · 예약</b>', '가능한 요일·시간을 표로 — 예약 화면과 같은 칸', '후기는 <b>결제·수업 완료된 회차가 있을 때만</b> 작성 가능', '연락처는 비공개, 대화는 앱 채팅으로만'], law: '<b>근거</b> 아동·청소년 성보호법 제56조(개인과외교습자 포함) · 아동복지법 제29조의3 · 학원법 제14조의2' },
@@ -541,7 +541,7 @@ const openThread = run(async (tid, first) => {
 /* ===================== 첫 화면 ===================== */
 function vWelcome() {
   return { title: '시작', html: `<div class="welcome">
-  <div class="art"><img class="tt" src="${TURTLE}" alt="가방을 멘 거북이 터틀리"><p class="hand">느린학습자 맞춤형 1:1 교육</p><p>아이 속도에 맞춰<br>끝까지 함께할 선생님</p><p class="sub2">안심 인증을 마친 선생님과 우리 동네에서,<br>한 번에 한 걸음씩 배워요.</p></div>
+  <div class="art"><img class="tt" src="${TURTLE}" alt="가방을 멘 거북이 터틀리"><img class="wm" src="${WORDMARK}" alt="터틀리"><p class="hand pen">느려도 끝까지</p><p>느린학습자 맞춤형 1:1 교육 플랫폼</p></div>
   <div class="road" aria-hidden="true"></div>
   <div class="acts"><button class="btn block" data-go="signup">시작하기</button><button class="btn block ghost" data-go="login">로그인</button><button class="linkbtn" data-browse>먼저 둘러볼게요</button></div></div>`,
   mount() { $('[data-browse]', view).onclick = () => { UI.seen = true; saveUI(); go('home'); }; } };
@@ -699,7 +699,7 @@ function vHome() {
  <div class="lt"><h1>${parent && S.kids[0] ? `${esc(k.name)}이에게 맞는<br>선생님을 찾아요` : '느린학습자 아이에게<br>꼭 맞는 1:1 선생님'}</h1><p>${u ? `${esc(u.name)}님, 오늘도 한 걸음씩 가 볼까요?` : '안심 인증을 마친 선생님만 소개해요.'}</p></div>
  <div class="sec">${nextCard}</div>
  <button class="searchbtn" data-go="tutors" data-focus-search>${ic('search', 20)}어떤 도움이 필요하세요?</button>
- <div class="sec">${secH('과목으로 찾기')}<div class="cats">${SUBJECTS.map(s => `<button class="cat" data-subj="${s.id}"><span class="ci">${ic(s.icon, 19)}</span>${s.name}</button>`).join('')}</div></div>
+ <div class="sec">${secH('과목으로 찾기')}<div class="cats tiles">${SUBJECTS.map(s => `<button class="cat" data-subj="${s.id}"><span class="ci">${ic(s.icon, 24)}</span>${s.name}</button>`).join('')}</div></div>
  <div class="sec">${secH('선생님을 만나는 두 가지 방법')}<div class="ways"><a class="way" href="#tutors">${ic('search', 24).replace('class="ic"', 'class="ic lead"')}<span><b>직접 찾기</b><small>조건으로 좁히고 프로필을 비교해서 골라요</small></span><span class="chev">${ic('chevR', 18)}</span></a><a class="way" href="#request">${ic('apply', 24).replace('class="ic"', 'class="ic lead"')}<span><b>수업 신청서 쓰기</b><small>아이 상황을 적어 두면 선생님이 먼저 지원해요</small></span><span class="chev">${ic('chevR', 18)}</span></a></div></div>
  <div class="sec">${secH(parent ? `${k.region} 가까운 선생님` : '이번 주 추천 선생님', '전체 보기', 'tutors')}<div>${near.slice(0, 4).map(tutorMini).join('')}</div></div>
  <div class="sec"><button class="safe" id="safe"><span class="si">${ic('shield', 24)}</span><span><b>안심 인증 4단계를 통과한 선생님만 소개해요</b><small>본인 확인 · 성범죄·아동학대 경력 조회 · 교육청 신고 · 자격 증빙</small></span><span class="more">${ic('chevR', 18)}</span></button></div>

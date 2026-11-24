@@ -36,7 +36,8 @@ function pretendardDataUri() {
   } catch { console.log('pyftsubset 이 없어 Pretendard 전체 파일을 넣습니다.'); }
   return 'data:font/woff2;base64,' + buf.toString('base64');
 }
-const fonts = ''
+const fonts = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
+  + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap">'
   + `<style>@font-face{font-family:'Pretendard Variable';font-weight:45 920;font-style:normal;font-display:swap;src:url(${pretendardDataUri()}) format('woff2-variations')}</style>`;
 const safe = s => s.replace(/<\/script/gi, '<\\/script');
 
