@@ -13,7 +13,7 @@ const read = f => fs.readFileSync(path.join(root, f), 'utf8');
 // 시드 데이터: 미리보기는 비밀번호를 평문 비교합니다 (데모 계정 전용, 실제 서버는 scrypt)
 const db = new Store(null);
 seed(db, { hash: pw => ({ salt: 'plain', hash: pw }) });
-db.data.meta.schema = 2;
+db.data.meta.schema = 3;
 db.data.sessions = [];
 
 const css = read('public/style.css').replace(/^@import url\('\/fonts\/[^']+'\);\n/gm, '');

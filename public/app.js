@@ -9,6 +9,9 @@ const SUBJ = Object.fromEntries(SUBJECTS.map(s => [s.id, s]));
 const IC = {
   home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5h4v5"/>',
   search: '<circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4.2-4.2"/>',
+  pause: '<rect x="6.5" y="5" width="3.5" height="14" rx="1"/><rect x="14" y="5" width="3.5" height="14" rx="1"/>',
+  headphones: '<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.5" height="7" rx="1.5"/><rect x="16.5" y="14" width="4.5" height="7" rx="1.5"/>',
+  music: '<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
   filter: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
   users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 14.2A6.5 6.5 0 0 1 21.5 20"/>',
   book: '<path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/>',
@@ -244,7 +247,7 @@ const run = fn => async (...a) => {
 };
 
 /* ===================== 레이어: 시트 · 대화상자 · 토스트 ===================== */
-let layer, view, tabbar;
+let layer, view, tabbar, dock;
 // 시트는 브라우저 기록에 한 칸 쌓아서, 휴대폰 뒤로가기를 누르면 화면을 떠나지 않고 시트만 닫혀요
 let sheetStack = [], backPending = false, goQueue = null;
 addEventListener('popstate', () => {
@@ -282,14 +285,136 @@ const canSpeak = 'speechSynthesis' in window;
 function speak(text, el) {
   if (!canSpeak) { toast('이 브라우저는 읽어주기를 지원하지 않아요'); return; }
   try {
-    speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR'; u.rate = .9;
+    if (PL.playing) plPause(); speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR'; u.rate = .9;
     $$('.speaking').forEach(x => x.classList.remove('speaking')); if (el) { el.classList.add('speaking'); u.onend = () => el.classList.remove('speaking'); }
     speechSynthesis.speak(u);
   } catch { toast('읽어주기를 시작하지 못했어요'); }
 }
-function stopSpeak() { try { canSpeak && speechSynthesis.cancel(); } catch { /* ignore */ } }
+function stopSpeak() { if (PL.playing && !PL.item?.music) return; try { canSpeak && speechSynthesis.cancel(); } catch { /* ignore */ } }
 function applyA11y() { document.documentElement.style.setProperty('--fs', UI.fs); document.documentElement.dataset.motion = UI.motion ? 'reduce' : ''; applyRead(); }
 function applyRead() { $('.screen') && $('.screen').classList.toggle('reading', !!UI.read); }
+
+
+/* ===================== 음원 플레이어: 화면을 옮겨도 계속 들려요 ===================== */
+// 듣기 자료(대본)는 한 줄씩 읽고 자막으로 보여줘요. 읽어주기를 못 쓰는 브라우저에서는 자막만 같은 속도로 넘어가요.
+// 음악 자료는 브라우저에서 잔잔한 소리를 만들어 틀어요(파일 없이).
+const PL = { item: null, idx: 0, playing: false, tok: 0, timer: null, au: null, open: false, pos: null };
+const koVoice = () => { try { return speechSynthesis.getVoices().some(v => /^ko/i.test(v.lang)); } catch { return false; } };
+function plStart(l) { plStop(true); PL.item = l; PL.idx = 0; PL.open = false; plPlay(); }
+function plPlay() {
+  if (!PL.item) return; PL.playing = true;
+  if (PL.item.music) musicPlay(); else { if (PL.idx >= PL.item.listen.length) PL.idx = 0; ttsLine(); }
+  drawMini();
+}
+function plPause() {
+  PL.playing = false; PL.tok++; clearTimeout(PL.timer);
+  if (PL.item?.music) musicPause(); else { try { canSpeak && speechSynthesis.cancel(); } catch { /* ignore */ } }
+  drawMini();
+}
+function plStop(silent) {
+  if (!PL.item) return; plPause(); musicClose(); PL.item = null; PL.open = false;
+  const m = $('#mp'); if (m) { m.classList.add('gone'); setTimeout(() => { if (!PL.item) { m.remove(); $('#mpdrop')?.remove(); } }, 220); }
+  if (!silent) toast('음원을 닫았어요');
+}
+function ttsLine() {
+  const tok = ++PL.tok; const L = PL.item.listen; const line = L[PL.idx];
+  if (line == null) { PL.playing = false; PL.idx = L.length; drawMini(); toast('다 들었어요. 잘했어요!'); return; }
+  const next = () => { if (tok !== PL.tok || !PL.playing) return; clearTimeout(PL.timer); PL.idx++; ttsLine(); };
+  if (canSpeak && koVoice()) {
+    try {
+      speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(line); u.lang = 'ko-KR'; u.rate = .88;
+      u.onend = () => setTimeout(next, 350); u.onerror = next; speechSynthesis.speak(u);
+      PL.timer = setTimeout(next, 2500 + line.length * 330); // 소리가 끝났다는 신호가 안 와도 다음 줄로
+    } catch { PL.timer = setTimeout(next, 1000 + line.length * 150); }
+  } else PL.timer = setTimeout(next, 1000 + line.length * 150);
+  drawMini();
+}
+// 잔잔한 음악: 네 개의 화음이 천천히 바뀌고, 그 위에 맑은 음이 가끔 울려요
+function musicPlay() {
+  const A = window.AudioContext || window.webkitAudioContext; if (!A) { toast('이 브라우저는 음악을 틀 수 없어요'); PL.playing = false; return; }
+  if (!PL.au) {
+    const ctx = new A(); const out = ctx.createGain(); out.gain.value = .14; out.connect(ctx.destination);
+    PL.au = { ctx, out, start: ctx.currentTime, used: 0, step: 0, tick: null };
+  }
+  const au = PL.au; au.ctx.resume(); au.from = au.ctx.currentTime;
+  const CH = [[261.6, 329.6, 392, 493.9], [220, 261.6, 329.6, 392], [174.6, 220, 261.6, 329.6], [196, 246.9, 293.7, 329.6]];
+  const PEN = [523.3, 587.3, 659.3, 784, 880];
+  const note = (f, t, len, g, type = 'sine') => { const o = au.ctx.createOscillator(), v = au.ctx.createGain(); o.type = type; o.frequency.value = f; v.gain.setValueAtTime(0, t); v.gain.linearRampToValueAtTime(g, t + len * .35); v.gain.linearRampToValueAtTime(0, t + len); o.connect(v); v.connect(au.out); o.start(t); o.stop(t + len + .05); };
+  const bar = () => {
+    if (!PL.playing) return; const t = au.ctx.currentTime + .05; const c = CH[au.step++ % CH.length];
+    c.forEach((f, i) => note(f / (i ? 1 : 2), t, 5.2, i ? .16 : .22, i ? 'sine' : 'triangle'));
+    for (let k = 0; k < 2; k++) if (Math.random() < .7) note(PEN[Math.floor(Math.random() * PEN.length)], t + 1 + k * 1.8, 1.6, .07);
+    if (musicPos() >= 1) { PL.playing = false; PL.idx = 0; musicClose(); drawMini(); toast('집중 시간이 끝났어요. 잠깐 쉬어요!'); }
+  };
+  clearInterval(au.tick); bar(); au.tick = setInterval(() => { bar(); drawMini(); }, 4000);
+}
+const musicPos = () => { const au = PL.au; if (!au || !PL.item?.music) return 0; const run = au.used + (PL.playing ? au.ctx.currentTime - au.from : 0); return Math.min(1, run / (PL.item.music * 60)); };
+function musicPause() { const au = PL.au; if (!au) return; clearInterval(au.tick); au.used += au.ctx.currentTime - au.from; au.from = au.ctx.currentTime; au.ctx.suspend(); }
+function musicClose() { const au = PL.au; if (!au) return; clearInterval(au.tick); try { au.ctx.close(); } catch { /* ignore */ } PL.au = null; }
+const plProgress = () => !PL.item ? 0 : PL.item.music ? musicPos() : Math.min(1, PL.idx / PL.item.listen.length);
+const plCaption = () => !PL.item ? '' : PL.item.music ? (PL.playing ? '잔잔한 음악이 흐르는 중' : '잠시 멈춤') + ` · ${Math.round(plProgress() * PL.item.music)}/${PL.item.music}분` : (PL.item.listen[PL.idx] || '다 들었어요. 다시 들으려면 재생을 눌러요');
+const narrow = () => matchMedia('(max-width:600px)').matches;
+
+function drawMini() {
+  if (!dock) return; let m = $('#mp');
+  if (!PL.item) { if (m && !m.classList.contains('gone')) m.remove(); return; }
+  const a = LIBART[PL.item.cat] || LIBART.read; const p = plProgress(); const deg = Math.round(p * 360);
+  if (!m) {
+    m = document.createElement('div'); m.id = 'mp'; m.className = 'mp'; m.setAttribute('role', 'region'); m.setAttribute('aria-label', '지금 듣는 자료');
+    m.innerHTML = `<button class="mp-art" aria-label="음원 아이콘 (끌어서 옮기거나 아래 X로 가져가면 닫혀요)"><span class="ring"></span><span class="ico"></span></button>
+     <div class="mp-body"><button class="mp-t" aria-label="자료 열기"><b></b><small aria-live="polite"></small></button><div class="mp-bar"><i></i></div></div>
+     <button class="mp-pp"></button><button class="mp-x" aria-label="음원 닫기">${ic('x', 18, 2.4)}</button>`;
+    dock.appendChild(m); bindMini(m);
+  }
+  m.classList.toggle('bubble', narrow()); m.classList.toggle('open', narrow() && PL.open); m.classList.toggle('playing', PL.playing);
+  $('.ring', m).style.background = `conic-gradient(var(--tint) ${deg}deg, var(--tint-line) ${deg}deg)`;
+  $('.ico', m).style.cssText = `background:${a[1]};color:${a[2]}`; $('.ico', m).innerHTML = PL.playing ? `<span class="eq"><i></i><i></i><i></i></span>` : ic(PL.item.music ? 'music' : 'headphones', 20, 2);
+  $('.mp-t b', m).textContent = PL.item.t; $('.mp-t small', m).textContent = plCaption(); $('.mp-bar i', m).style.width = (p * 100) + '%';
+  const pp = $('.mp-pp', m); pp.innerHTML = ic(PL.playing ? 'pause' : 'play', 20, 2.2); pp.setAttribute('aria-label', PL.playing ? '일시정지' : '재생');
+  placeMini();
+}
+function placeMini() {
+  const m = $('#mp'); if (!m || !dock) return;
+  const z = dock.getBoundingClientRect().width / dock.offsetWidth || 1;
+  const bb = $('.bottombar,.compose', view); const tb = tabbar && !tabbar.hidden ? tabbar.getBoundingClientRect().height : 0;
+  const under = Math.max(tb, bb ? bb.getBoundingClientRect().height : 0) / z;
+  m.style.setProperty('--under', under + 'px'); dock.style.setProperty('--drop-b', (under + 18) + 'px');
+  if (PL.pos) { m.style.left = PL.pos.x + 'px'; m.style.top = PL.pos.y + 'px'; m.style.bottom = 'auto'; m.style.right = 'auto'; }
+  else { m.style.left = ''; m.style.top = ''; m.style.right = ''; m.style.bottom = ''; m.style.width = ''; }
+}
+function bindMini(m) {
+  $('.mp-pp', m).onclick = () => (PL.playing ? plPause() : plPlay());
+  $('.mp-x', m).onclick = () => plStop();
+  $('.mp-t', m).onclick = () => { const id = PL.item?.id; PL.open = false; drawMini(); if (id) { if (curRoute !== 'library') go('library'); setTimeout(() => libSheet(id), curRoute === 'library' ? 0 : 120); } };
+  // 끌기: 아이콘을 잡고 옮겨요. 끄는 동안 화면 아래에 X가 나타나고, 거기에 놓으면 닫혀요.
+  const art = $('.mp-art', m); let st = null;
+  art.addEventListener('pointerdown', e => {
+    const z = dock.getBoundingClientRect().width / dock.offsetWidth || 1; const r = m.getBoundingClientRect(); const d = dock.getBoundingClientRect();
+    st = { x: e.clientX, y: e.clientY, ox: (e.clientX - r.left) / z, oy: (e.clientY - r.top) / z, z, d, moved: false };
+    art.setPointerCapture(e.pointerId);
+  });
+  art.addEventListener('pointermove', e => {
+    if (!st) return; if (!st.moved && Math.hypot(e.clientX - st.x, e.clientY - st.y) < 6) return;
+    if (!st.moved) { st.moved = true; PL.open = false; m.classList.remove('open'); if (!narrow()) m.style.width = m.offsetWidth + 'px'; m.classList.add('drag'); let dp = $('#mpdrop'); if (!dp) { dp = document.createElement('div'); dp.id = 'mpdrop'; dp.className = 'mpdrop'; dp.innerHTML = `${ic('x', 26, 2.4)}<span>여기에 놓으면 닫혀요</span>`; dock.appendChild(dp); } requestAnimationFrame(() => dp.classList.add('on')); }
+    const W = dock.offsetWidth, H = dock.offsetHeight; const x = Math.max(4, Math.min(W - m.offsetWidth - 4, (e.clientX - st.d.left) / st.z - st.ox)); const y = Math.max(4, Math.min(H - m.offsetHeight - 4, (e.clientY - st.d.top) / st.z - st.oy));
+    PL.pos = { x, y }; placeMini();
+    const dp = $('#mpdrop'); const dr = dp.getBoundingClientRect(); const ar = art.getBoundingClientRect();
+    dp.classList.toggle('hot', Math.hypot(ar.left + ar.width / 2 - (dr.left + dr.width / 2), ar.top + ar.height / 2 - (dr.top + dr.height / 2)) < dr.width * .9);
+  });
+  const end = () => {
+    if (!st) return; const moved = st.moved; st = null; m.classList.remove('drag'); const dp = $('#mpdrop');
+    if (moved) {
+      const hot = dp?.classList.contains('hot'); dp?.classList.remove('on'); setTimeout(() => dp?.remove(), 200);
+      if (hot) { PL.pos = null; plStop(); return; }
+      if (narrow()) { const W = dock.offsetWidth; PL.pos.x = PL.pos.x + m.offsetWidth / 2 < W / 2 ? 8 : W - m.offsetWidth - 8; placeMini(); } // 휴대폰에선 가장자리에 붙어요
+      return;
+    }
+    if (narrow()) { PL.open = !PL.open; drawMini(); } else (PL.playing ? plPause() : plPlay());
+  };
+  art.addEventListener('pointerup', end); art.addEventListener('pointercancel', end);
+  art.addEventListener('keydown', e => { if (e.key === 'Delete' || e.key === 'Backspace') plStop(); });
+}
+addEventListener('resize', () => drawMini());
 
 /* ===================== 라우터 ===================== */
 const NEED = { booking: 'parent', checkout: 'parent', paid: 'parent', request: 'parent', lessons: 'parent', kids: 'parent', room: 'any', chat: 'any', payments: 'parent', thome: 'tutor', students: 'tutor', admin: 'admin' };
@@ -317,7 +442,7 @@ function tabsHTML(r) {
 }
 function render() {
   const p = parse(), r = p.r, need = NEED[r]; stopSpeak(); clearInterval(poll);
-  $$('.layer > *').forEach(x => x.remove()); sheetStack = [];
+  $$('#layer > *').forEach(x => x.remove()); sheetStack = [];
   if (need && !S.user) { UI.next = location.hash.slice(1); UI.loginNote = true; saveUI(); location.replace('#login'); return; }
   let v;
   if (need && need !== 'any' && S.user.role !== need && !(need === 'parent' && S.user.role === 'admin')) v = vGate(need);
@@ -329,7 +454,7 @@ function render() {
   tabbar.hidden = notab; tabbar.innerHTML = notab ? '' : tabsHTML(r);
   document.title = (v.title ? v.title + ' · ' : '') + '터틀리';
   if (v.mount) Promise.resolve(v.mount(p)).catch(e => toast(e.message));
-  renderNote(r); renderNav(); applyRead();
+  renderNote(r); renderNav(); applyRead(); placeMini();
   if (!firstRender) { const h = $('h1', view) || $('.appbar .t', view); if (h) { h.setAttribute('tabindex', '-1'); h.focus({ preventScroll: true }); } }
   firstRender = false;
 }
@@ -888,7 +1013,7 @@ function vLibrary() {
   mount() {
     const draw = () => {
       const q = lf.q.trim(); const L = S.library.filter(l => (!lf.cat || l.cat === lf.cat) && (!lf.lv || l.lv === lf.lv) && (!q || (l.t + l.d).includes(q))); $('#lcount').textContent = `자료 ${S.library.length}개 중 ${L.length}개`;
-      $('#lgrid').innerHTML = L.length ? L.map(l => { const a = LIBART[l.cat]; return `<button class="litem" data-lib="${l.id}"><span class="art" style="background:${a[1]};color:${a[2]};display:grid"><span class="lv tag" style="background:var(--cell)">${l.lv}단계</span>${ic(a[0], 64, 1.5)}</span><span class="lt2" style="display:block"><b>${l.t}</b><small>${l.type} · ${l.min}분${S.saved.lib.includes(l.id) ? ' · 저장함' : ''}</small></span></button>`; }).join('') : `<div class="empty" style="grid-column:1/-1"><b>조건에 맞는 자료가 없어요</b></div>`;
+      $('#lgrid').innerHTML = L.length ? L.map(l => { const a = LIBART[l.cat]; return `<button class="litem" data-lib="${l.id}"><span class="art" style="background:${a[1]};color:${a[2]};display:grid"><span class="lv tag" style="background:var(--cell)">${l.lv}단계</span>${ic(a[0], 64, 1.5)}</span>${l.listen || l.music ? `<span class="lhear" aria-label="들을 수 있어요">${ic(l.music ? 'music' : 'headphones', 14, 2.2)}${PL.item?.id === l.id ? '듣는 중' : '듣기'}</span>` : ''}<span class="lt2" style="display:block"><b>${l.t}</b><small>${l.type} · ${l.min}분${S.saved.lib.includes(l.id) ? ' · 저장함' : ''}</small></span></button>`; }).join('') : `<div class="empty" style="grid-column:1/-1"><b>조건에 맞는 자료가 없어요</b></div>`;
       $$('[data-lib]', view).forEach(b => b.onclick = () => libSheet(b.dataset.lib, draw)); saveUI();
     };
     $('#lq').oninput = e => { lf.q = e.target.value; draw(); };
@@ -898,14 +1023,22 @@ function vLibrary() {
   } };
 }
 function libSheet(id, cb) {
-  const l = S.library.find(x => x.id === id); const a = LIBART[l.cat]; const sv = () => S.saved.lib.includes(l.id);
-  sheet({ title: l.t, html: `<div style="background:${a[1]};color:${a[2]};border-radius:18px;aspect-ratio:16/9;display:grid;place-items:center;margin-bottom:12px;position:relative">${ic(a[0], 84, 1.4)}${l.type === '영상' ? `<span style="position:absolute;width:56px;height:56px;border-radius:50%;background:rgba(0,0,0,.55);display:grid;place-items:center;color:#fff">${ic('play', 26, 2)}</span>` : ''}</div>
+  const l = S.library.find(x => x.id === id); if (!l) return; const a = LIBART[l.cat]; const sv = () => S.saved.lib.includes(l.id);
+  const canHear = !!(l.listen || l.music); const isMine = () => PL.item?.id === l.id;
+  const hearTxt = () => isMine() && PL.playing ? `${ic('pause', 20, 2.2)}일시정지` : isMine() && plProgress() > 0 && plProgress() < 1 ? `${ic('play', 20, 2.2)}이어 듣기` : `${ic(l.music ? 'music' : 'headphones', 20, 2)}${l.music ? '음악 틀기' : '듣기'} · ${l.min}분`;
+  const block = b => `<div class="lb">${b.h ? `<h3>${b.h}</h3>` : ''}${b.p ? `<p class="para" data-say>${b.p}</p>` : ''}${b.list ? `<ul class="bul">${b.list.map(x => `<li data-say>${ic('check', 18, 2.2)}<span>${x}</span></li>`).join('')}</ul>` : ''}${b.words ? `<div class="wgrid">${b.words.map(([w, m]) => `<div data-say><b>${w}</b><span>${m}</span></div>`).join('')}</div>` : ''}</div>`;
+  sheet({ title: l.t, html: `<button class="lcover" id="lcover" style="background:${a[1]};color:${a[2]}" ${canHear ? '' : 'disabled'} aria-label="${canHear ? '듣기 시작' : ''}">${ic(a[0], 84, 1.4)}${canHear ? `<span class="pl">${ic('play', 26, 2)}</span>` : ''}</button>
   <div class="tags" style="margin-bottom:8px"><span class="tag g">${LIBCAT[l.cat]}</span><span class="tag">${l.type}</span><span class="tag">${l.min}분</span><span class="tag b">${l.lv}단계</span></div>
-  <p class="para" style="margin:0 0 14px" data-say>${l.d}</p><ol class="steps">${l.steps.map(s => `<li data-say>${s}</li>`).join('')}</ol>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px"><button class="btn ghost" id="lread">${ic('vol', 20)}읽어주기</button><button class="btn line" id="lsave">${sv() ? '저장 취소' : '저장하기'}</button></div>
+  <p class="para" style="margin:0 0 14px" data-say>${l.d}</p>
+  ${canHear ? `<button class="btn block" id="lhear">${hearTxt()}</button><p class="cap" style="padding:6px 2px 0">다른 화면으로 가도 계속 들려요. 아래 작은 플레이어에서 멈추거나 닫을 수 있어요.</p>` : ''}
+  ${(l.body || []).map(block).join('')}
+  <div class="lb"><h3>따라 하기</h3><ol class="steps">${l.steps.map(x => `<li data-say>${x}</li>`).join('')}</ol></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px"><button class="btn ghost" id="lread">${ic('vol', 20)}글 읽어주기</button><button class="btn line" id="lsave">${sv() ? '저장 취소' : '저장하기'}</button></div>
   ${role() === 'tutor' ? '<button class="btn block" id="luse" style="margin-top:8px">다음 수업에 붙이기</button>' : ''}`,
   mount(sh) {
-    $('#lread', sh).onclick = () => speak(l.t + '. ' + l.d + ' ' + l.steps.map((s, i) => (i + 1) + '단계. ' + s).join(' '), $('.steps', sh));
+    const hear = () => { if (isMine()) { PL.playing ? plPause() : plPlay(); } else plStart(l); const h = $('#lhear', sh); if (h) h.innerHTML = hearTxt(); $$('[data-lib]', view).length && cb && cb(); };
+    const hb = $('#lhear', sh); if (hb) hb.onclick = hear; const cv = $('#lcover', sh); if (canHear) cv.onclick = hear;
+    $('#lread', sh).onclick = () => speak(l.t + '. ' + l.d + ' ' + l.steps.map((x, i) => (i + 1) + '단계. ' + x).join(' '), $('.steps', sh));
     $('#lsave', sh).onclick = run(async () => { if (!me()) { toast('로그인하면 저장할 수 있어요'); return; } const r = await api(`/saved/lib/${l.id}`, { method: 'POST' }); await sync(); $('#lsave', sh).textContent = r.saved ? '저장 취소' : '저장하기'; toast(r.saved ? '자료를 저장했어요' : '저장을 취소했어요'); cb && cb(); });
     const u = $('#luse', sh); if (u) u.onclick = () => { const b = S.bookings.find(x => x.status === 'active'); toast(b ? `${b.kid?.name || ''} 다음 수업 자료로 붙였어요` : '진행 중인 수업이 없어요'); };
   } });
@@ -1137,7 +1270,7 @@ function shell() {
     <div class="status" aria-hidden="true"><span id="clock">9:41</span><span class="island"></span><span class="sig">${sig}</span></div>
     <main class="view" id="view" tabindex="-1" aria-label="터틀리 앱"></main>
     <nav class="tabbar" id="tabbar" aria-label="하단 메뉴"></nav>
-    <div class="layer" id="layer"></div><span class="home-ind" aria-hidden="true"></span>
+    <div class="layer dock" id="dock"></div><div class="layer" id="layer"></div><span class="home-ind" aria-hidden="true"></span>
    </div></div></div>
   <aside class="rail rail-r" aria-label="설계 노트">
    <div class="mobnav" style="margin-bottom:12px"><div class="note" style="padding:14px 16px"><label for="nav-sel" style="font-size:13px;font-weight:600;color:var(--muted)">화면 바로가기</label><select id="nav-sel" class="sel in" style="margin:6px 0 10px"></select><div class="role-sw" role="group" aria-label="데모 역할 바꾸기" style="margin:0 0 10px"><button data-role="parent">보호자</button><button data-role="tutor">선생님</button><button data-role="admin">관리자</button></div><button class="rail-btn" data-report>${ic('report', 20)}플랫폼 분석 리포트</button></div></div>
@@ -1149,7 +1282,7 @@ function shell() {
 }
 async function boot() {
   shell();
-  view = $('#view'); tabbar = $('#tabbar'); layer = $('#layer');
+  view = $('#view'); tabbar = $('#tabbar'); layer = $('#layer'); dock = $('#dock');
   const clk = () => { const d = new Date(); $('#clock').textContent = `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; }; clk(); setInterval(clk, 30000);
   document.addEventListener('click', e => {
     const t = e.target;
