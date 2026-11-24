@@ -9,6 +9,7 @@ const SUBJ = Object.fromEntries(SUBJECTS.map(s => [s.id, s]));
 const IC = {
   home: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5h4v5"/>',
   search: '<circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4.2-4.2"/>',
+  filter: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
   users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M17.5 14.2A6.5 6.5 0 0 1 21.5 20"/>',
   book: '<path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5z"/><path d="M12 6.5v13"/>',
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
@@ -790,33 +791,51 @@ function vPaid() {
 
 /* ===================== 커뮤니티 (지역 채널 × 게시판 × 아이 단계·나이대) ===================== */
 function vCommunity() {
-  const cf = UI.cf; if (cf.level === null) cf.level = ''; const myLv = kid().level;
-  const g = S.groups; const sel = LEVELS.find(l => l.key === cf.level);
+  const cf = UI.cf; if (cf.level === null) cf.level = '';
+  const on = [cf.level && ['level', levelName(cf.level)], cf.age && ['age', ageName(cf.age)], cf.region !== '전국' && ['region', cf.region]].filter(Boolean);
   return { title: '커뮤니티', html: `<div class="lt"><h1>커뮤니티</h1><p>전국 · 17개 시·도, 아이 단계별로 보호자와 선생님이 함께해요</p></div>
- <div class="lvl" role="group" aria-label="아이 발달 단계">
-  <button data-lv="" aria-pressed="${!cf.level}"><b>모든 단계</b><small>전체 글</small><span class="n">글 ${g.total}개</span></button>
-  ${g.levels.map(l => `<button data-lv="${l.key}" aria-pressed="${cf.level === l.key}">${myLv === l.key ? '<span class="mine">우리 아이</span>' : ''}<b>${l.name}</b><small>${l.range}</small><span class="n">글 ${l.postCount}개</span></button>`).join('')}
- </div>
- ${sel ? `<p class="lvdesc"><b>${sel.name}</b> · ${sel.desc}${me()?.role === 'parent' && S.kids[0] && myLv !== sel.key ? ` <button class="linkbtn" id="setMine" style="padding:0;min-height:0;color:var(--tint-text);font-weight:600">우리 아이 단계로 설정</button>` : ''}</p>` : '<div style="height:10px"></div>'}
- <div class="chips" style="margin-bottom:8px">${[['', '모든 나이'], ...AGES.map(a => [a.key, a.name])].map(([k, n]) => `<button class="chip soft" data-ag="${k}" aria-pressed="${cf.age === k}">${n}</button>`).join('')}</div>
- <div class="chips" style="margin-bottom:10px">${['전국', ...REGIONS].map(r => `<button class="chip" data-cr="${r}" aria-pressed="${cf.region === r}">${r}</button>`).join('')}</div>
- <div class="seg" role="group" aria-label="게시판" style="grid-auto-columns:auto">${BOARDS.map(b => `<button data-cb="${b}" aria-pressed="${cf.board === b}" style="padding:0 4px">${b}</button>`).join('')}</div>
+ <button class="fbar" id="fopen" aria-haspopup="dialog"><span class="fi">${ic('filter', 20, 2)}</span><span class="ft"><b>${on.length ? '내가 고른 조건으로 보는 중' : '우리 아이에 맞는 글만 보기'}</b><small>아이 단계 · 나이 · 지역</small></span>${on.length ? `<span class="fn">${on.length}</span>` : ''}<span class="fgo">${on.length ? '바꾸기' : '고르기'}${ic('chevR', 16, 2.2)}</span></button>
+ ${on.length ? `<div class="chips fsel" aria-label="고른 조건">${on.map(([k, n]) => `<button class="chip soft" aria-pressed="true" data-rm="${k}" aria-label="${n} 조건 빼기">${esc(n)}${ic('x', 14, 2.4)}</button>`).join('')}<button class="linkbtn" data-rm="all" style="min-height:38px;padding:0 6px;font-size:14px">모두 지우기</button></div>` : ''}
+ <div class="seg" role="group" aria-label="게시판" style="grid-auto-columns:auto;margin-top:12px">${BOARDS.map(b => `<button data-cb="${b}" aria-pressed="${cf.board === b}" style="padding:0 4px">${b}</button>`).join('')}</div>
  <div class="sec" id="plist"><p class="cap">불러오는 중…</p></div><p class="cap" style="padding:0 20px 12px">아이 이름·학교·연락처는 쓰지 않아요. 단계는 진단명이 없어도 가장 가까운 곳을 고르면 돼요.</p>
  <button class="fab" id="wr" aria-label="글쓰기">${ic('pen', 26)}</button>`,
   async mount() {
     const draw = async () => {
       const qs = new URLSearchParams({ region: cf.region, board: cf.board, ...(cf.level && { level: cf.level }), ...(cf.age && { age: cf.age }) });
       const { posts } = await api('/posts?' + qs); const box = $('#plist'); if (!box) return;
-      box.innerHTML = posts.length ? posts.map(postCard).join('') : `<div class="empty"><img src="${TURTLE}" alt=""><b>아직 글이 없어요</b><p>이 단락의 첫 글을 남겨 주세요.</p></div>`;
+      box.innerHTML = posts.length ? posts.map(postCard).join('') : `<div class="empty"><img src="${TURTLE}" alt=""><b>아직 글이 없어요</b><p>${on.length ? '조건을 하나 빼 보거나, ' : ''}이 단락의 첫 글을 남겨 주세요.</p></div>`;
     };
-    $$('[data-lv]').forEach(b => b.onclick = () => { cf.level = b.dataset.lv; saveUI(); render(); });
-    $$('[data-ag]').forEach(b => b.onclick = () => { cf.age = b.dataset.ag; saveUI(); $$('[data-ag]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); draw(); });
-    $$('[data-cr]').forEach(b => b.onclick = () => { cf.region = b.dataset.cr; saveUI(); $$('[data-cr]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); draw(); });
+    $('#fopen').onclick = () => commFilterSheet();
+    $$('[data-rm]').forEach(b => b.onclick = () => { const k = b.dataset.rm; if (k === 'level' || k === 'all') cf.level = ''; if (k === 'age' || k === 'all') cf.age = ''; if (k === 'region' || k === 'all') cf.region = '전국'; saveUI(); render(); });
     $$('[data-cb]').forEach(b => b.onclick = () => { cf.board = b.dataset.cb; saveUI(); $$('[data-cb]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); draw(); });
-    const sm = $('#setMine'); if (sm) sm.onclick = run(async () => { await api(`/kids/${S.kids[0].id}`, { method: 'PATCH', body: { level: cf.level } }); await sync(); toast(`우리 아이 단계를 ${levelName(cf.level)}(으)로 정했어요`); render(); });
-    const on = $('.lvl [aria-pressed=true]'); if (on) on.scrollIntoView({ inline: 'center', block: 'nearest' });
     $('#wr').onclick = writeSheet; await draw();
   } };
+}
+// 커뮤니티 조건 고르기: 고르는 동안은 바로 바뀌지 않고, 아래 버튼에 몇 개 글이 나오는지 보여준 뒤 한 번에 적용
+function commFilterSheet() {
+  const cf = UI.cf; const d = { level: cf.level || '', age: cf.age || '', region: cf.region || '전국' }; const myLv = kid().level; const g = S.groups;
+  const lvBtn = (k, n, r, c) => `<button class="lvc" data-lv="${k}" aria-pressed="${d.level === k}">${myLv && myLv === k ? '<span class="mine">우리 아이</span>' : ''}<b>${n}</b><small>${r}</small><span class="n">글 ${c}개</span></button>`;
+  sheet({ title: '조건 고르기', html: `<div class="field"><span class="lab">아이 단계</span><div class="lvgrid">${lvBtn('', '모든 단계', '전체 글', g.total)}${g.levels.map(l => lvBtn(l.key, l.name, l.range, l.postCount)).join('')}</div><p class="lvdesc" id="lvd" hidden></p></div>
+  <div class="field"><span class="lab">아이 나이</span><div class="chips wrap">${[['', '모든 나이'], ...AGES.map(a => [a.key, a.name])].map(([k, n]) => `<button class="chip" data-ag="${k}" aria-pressed="${d.age === k}">${n}</button>`).join('')}</div></div>
+  <div class="field"><span class="lab">지역</span><div class="chips wrap">${['전국', ...REGIONS].map(r => `<button class="chip" data-cr="${r}" aria-pressed="${d.region === r}">${r}</button>`).join('')}</div></div>
+  <div class="fact"><button class="btn line" id="freset2">처음으로</button><button class="btn" id="fapply">글 보기</button></div>`, mount(sh, close) {
+    const pick = (sel, key, v) => { d[key] = v; $$(sel, sh).forEach(x => x.setAttribute('aria-pressed', String(x.dataset[sel.slice(6, 8)] === v))); upd(); };
+    let seq = 0;
+    const upd = async () => {
+      const lv = LEVELS.find(l => l.key === d.level); const ld = $('#lvd', sh);
+      ld.hidden = !lv; if (lv) ld.innerHTML = `<b>${lv.name}</b> · ${lv.desc}${me()?.role === 'parent' && S.kids[0] && myLv !== lv.key ? ` <button class="linkbtn" id="setMine" style="padding:0;min-height:0;color:var(--tint-text);font-weight:600">우리 아이 단계로 설정</button>` : ''}`;
+      const sm = $('#setMine', sh); if (sm) sm.onclick = run(async () => { await api(`/kids/${S.kids[0].id}`, { method: 'PATCH', body: { level: d.level } }); await sync(); toast(`우리 아이 단계를 ${levelName(d.level)}(으)로 정했어요`); sm.remove(); });
+      const my = ++seq; const qs = new URLSearchParams({ region: d.region, board: cf.board, ...(d.level && { level: d.level }), ...(d.age && { age: d.age }) });
+      try { const { posts } = await api('/posts?' + qs); if (my === seq) $('#fapply', sh).textContent = `글 ${posts.length}개 보기`; } catch { /* 개수는 못 세도 적용은 가능 */ }
+    };
+    $$('[data-lv]', sh).forEach(b => b.onclick = () => pick('[data-lv]', 'level', b.dataset.lv));
+    $$('[data-ag]', sh).forEach(b => b.onclick = () => pick('[data-ag]', 'age', b.dataset.ag));
+    $$('[data-cr]', sh).forEach(b => b.onclick = () => pick('[data-cr]', 'region', b.dataset.cr));
+    $('#freset2', sh).onclick = () => { pick('[data-lv]', 'level', ''); pick('[data-ag]', 'age', ''); pick('[data-cr]', 'region', '전국'); };
+    $('#fapply', sh).onclick = () => { Object.assign(cf, d); saveUI(); close(); render(); };
+    sh.appendChild($('.fact', sh)); // 버튼은 스크롤과 상관없이 시트 맨 아래에 항상 보이게
+    upd();
+  } });
 }
 function writeSheet() {
   if (!me()) { UI.next = 'community'; UI.loginNote = true; saveUI(); go('login'); return; }
