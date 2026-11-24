@@ -306,7 +306,8 @@ function plSetSpeed(v) { UI.speed = v; saveUI(); if (PL.playing && PL.item && !P
 const plNextSpeed = () => plSetSpeed(SPEEDS[(SPEEDS.indexOf(plSpeed()) + 1) % SPEEDS.length]);
 const spTxt = v => (v === 1 ? '1' : v) + '배';
 const koVoice = () => { try { return speechSynthesis.getVoices().some(v => /^ko/i.test(v.lang)); } catch { return false; } };
-function plStart(l) { plStop(true); PL.item = l; PL.idx = 0; PL.open = false; plPlay(); }
+// 다른 자료로 바꿀 땐 소리만 멈추고 플레이어 창은 그대로 둬요 (닫는 애니메이션이 새 자료를 가리던 문제)
+function plStart(l) { if (PL.item) { plPause(); musicClose(); } PL.item = l; PL.idx = 0; PL.open = false; plPlay(); }
 function plPlay() {
   if (!PL.item) return; PL.playing = true;
   if (PL.item.music) musicPlay(); else { if (PL.idx >= PL.item.listen.length) PL.idx = 0; ttsLine(); }
@@ -372,7 +373,7 @@ function drawMini() {
      <button class="mp-sp"></button><button class="mp-pp"></button><button class="mp-x" aria-label="음원 닫기">${ic('x', 18, 2.4)}</button>`;
     dock.appendChild(m); bindMini(m);
   }
-  m.classList.toggle('bubble', narrow()); m.classList.toggle('open', narrow() && PL.open); m.classList.toggle('playing', PL.playing);
+  m.classList.remove('gone'); m.classList.toggle('bubble', narrow()); m.classList.toggle('open', narrow() && PL.open); m.classList.toggle('playing', PL.playing);
   $('.ring', m).style.background = `conic-gradient(var(--tint) ${deg}deg, var(--tint-line) ${deg}deg)`;
   $('.ico', m).style.cssText = `background:${a[1]};color:${a[2]}`; $('.ico', m).innerHTML = PL.playing ? `<span class="eq"><i></i><i></i><i></i></span>` : ic(PL.item.music ? 'music' : 'headphones', 20, 2);
   $('.mp-t b', m).textContent = PL.item.t; $('.mp-t small', m).textContent = plCaption(); $('.mp-bar i', m).style.width = (p * 100) + '%';
