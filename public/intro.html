@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>터틀리 소개</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="느린학습자 아이와 아이 속도를 아는 선생님을 1:1로 잇는 터틀리를 소개해요.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap">
+<style>
+/* 레이아웃: 장면마다 화면 높이의 몇 배 길이를 주고, 안쪽 무대는 화면에 고정(sticky).
+   스크롤 진행도(0~1)에 따라 글이 한 줄씩 떠오르고, 바탕색이 다음 장면 색으로 천천히 넘어가요. */
+:root{
+  color-scheme:light;
+  --paper:#FFFFFF;   /* 첫 장면 바탕 */
+  --mist:#F3F7EE;    /* 연한 잎색 */
+  --leaf:#3D7B35;    /* 터틀리 초록 (누르는 것) */
+  --forest:#1F3D1C;  /* 짙은 숲 (마지막 장면) */
+  --sun:#FFF1CF;     /* 햇살 */
+  --ink:#262A20; --ink2:#3E4434; --muted:#6D6F62; --line:#E9E4D8;
+  --font:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",system-ui,sans-serif;
+  --hand:"Nanum Pen Script",var(--font);
+  --bg:var(--paper); --fg:var(--ink);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:auto}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 17px/1.6 var(--font);-webkit-font-smoothing:antialiased;word-break:keep-all;overflow-x:hidden;transition:color .4s}
+img{display:block;max-width:100%}
+.wrap{padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+.hand{font-family:var(--hand);font-weight:400}
+
+/* 위쪽 바 */
+.top{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding-top:calc(env(safe-area-inset-top,0px) + 12px);padding-bottom:12px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));transition:background .3s,box-shadow .3s}
+.top.solid{background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.top .brand{display:flex;align-items:center;gap:8px;text-decoration:none;color:inherit}
+.top .brand img{height:28px;width:auto}
+.top .brand b{font-size:15px;opacity:.75}
+.top .cta{border:0;border-radius:999px;background:var(--leaf);color:#fff;font-weight:700;font-size:15px;padding:10px 18px;text-decoration:none}
+.bar{position:fixed;left:0;top:0;height:3px;background:var(--leaf);z-index:30;width:0}
+
+/* 장면 공통 */
+.scene{position:relative}
+.stage{position:sticky;top:0;height:100vh;height:100svh;display:grid;place-items:center;overflow:hidden}
+.inner{width:100%;max-width:960px;margin:0 auto;text-align:center}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .6s ease,transform .6s cubic-bezier(.2,.8,.2,1),filter .6s;filter:blur(4px)}
+.reveal.on{opacity:1;transform:none;filter:none}
+.reveal.past{opacity:.28}
+h1,h2{margin:0;letter-spacing:-.035em;line-height:1.22;text-wrap:balance}
+.eyebrow{font-size:15px;font-weight:700;color:var(--leaf);letter-spacing:.02em;margin:0 0 14px}
+
+/* 1. 첫 장면 */
+.hero .inner{display:flex;flex-direction:column;align-items:center;gap:6px}
+.hero .turtle{width:min(260px,58vw);animation:walk 3.4s ease-in-out infinite}
+@keyframes walk{0%,100%{transform:translateX(-10px) rotate(-3deg)}50%{transform:translateX(10px) rotate(3deg)}}
+.hero h1{font-size:clamp(52px,11vw,112px);font-family:var(--hand);font-weight:400;letter-spacing:0;line-height:1;margin-top:18px}
+.hero p{font-size:clamp(18px,2.6vw,24px);color:var(--ink2);margin:14px 0 0}
+.hint{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 28px);left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;font-size:14px;color:var(--muted)}
+.hint i{width:2px;height:34px;background:linear-gradient(var(--muted),transparent);animation:drip 1.6s ease-in-out infinite}
+@keyframes drip{0%{transform:scaleY(.2);transform-origin:top}60%{transform:scaleY(1)}100%{opacity:0}}
+
+/* 2. 한 줄씩 커지는 문장 */
+.lines .inner{text-align:left;max-width:820px}
+.lines h2{font-size:clamp(30px,5.6vw,60px);font-weight:800;margin:0 0 .25em}
+.lines h2 em{font-style:normal;color:var(--leaf)}
+
+/* 3. 큰 숫자 */
+.stat .inner{display:flex;flex-direction:column;align-items:center}
+.stat .num{font-size:clamp(84px,19vw,220px);font-weight:900;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums;color:var(--leaf)}
+.stat .num small{font-size:.38em;font-weight:800;margin-left:.06em}
+.stat p{font-size:clamp(19px,2.8vw,28px);margin:18px 0 0;color:var(--ink2);max-width:22em}
+.stat .src{font-size:13px;color:var(--muted);margin-top:14px}
+
+/* 4. 돌아가는 배경 + 세 가지 약속 */
+.orb{position:absolute;width:150vmax;height:150vmax;left:50%;top:50%;margin:-75vmax 0 0 -75vmax;border-radius:50%;background:conic-gradient(from var(--rot,0deg),#E7F2DC,#FFF1CF,#DDEFE8,#EAF2DE,#FCE8EC,#E7F2DC);filter:blur(60px);opacity:.85;pointer-events:none}
+.promise .inner{position:relative;max-width:1040px}
+.promise h2{font-size:clamp(30px,5vw,54px);font-weight:800;margin-bottom:34px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;text-align:left}
+.card{background:rgba(255,255,255,.78);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:24px;padding:24px 22px;box-shadow:0 10px 40px rgba(38,42,32,.08)}
+.card .k{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:14px;background:var(--leaf);color:#fff;font-weight:800;margin-bottom:14px}
+.card b{display:block;font-size:21px;letter-spacing:-.02em;margin-bottom:6px}
+.card span{color:var(--ink2);font-size:16px}
+
+/* 5. 안심 인증 체크 */
+.safe .inner{max-width:720px}
+.safe h2{font-size:clamp(30px,5vw,54px);font-weight:800;margin-bottom:28px}
+.checks{display:grid;gap:12px;text-align:left}
+.chk{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px 18px;font-size:clamp(17px,2.2vw,20px);font-weight:600}
+.chk .o{flex:none;width:30px;height:30px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;color:#fff;transition:background .4s,border-color .4s}
+.chk.on .o{background:var(--leaf);border-color:var(--leaf)}
+.chk small{display:block;font-size:14px;font-weight:400;color:var(--muted)}
+
+/* 6. 돈의 흐름 막대 */
+.split .inner{max-width:760px}
+.split h2{font-size:clamp(30px,5vw,54px);font-weight:800;margin-bottom:30px}
+.meter{display:flex;height:84px;border-radius:22px;overflow:hidden;background:rgba(255,255,255,.6)}
+.meter i{display:grid;place-items:center;font-style:normal;font-weight:800;font-size:clamp(17px,2.4vw,22px);color:#fff;width:0;transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.meter .a{background:var(--leaf)}.meter .b{background:#B9AE9A}
+.split .legend{display:flex;justify-content:space-between;margin-top:14px;color:var(--ink2);font-size:16px;text-align:left;gap:12px}
+
+/* 7. 마지막 장면 (짙은 숲) */
+.end .inner{display:flex;flex-direction:column;align-items:center;gap:8px}
+.end h2{font-size:clamp(40px,8vw,88px);font-family:var(--hand);font-weight:400;letter-spacing:0;line-height:1.05}
+.end p{font-size:clamp(18px,2.4vw,22px);opacity:.85;margin:6px 0 22px}
+.end .btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.end a{border-radius:16px;padding:16px 26px;font-weight:700;font-size:17px;text-decoration:none}
+.end .p{background:#fff;color:var(--forest)}
+.end .g{background:rgba(255,255,255,.14);color:#fff}
+.end img{width:120px;margin-bottom:10px;animation:walk 3.4s ease-in-out infinite}
+footer{padding-block:28px 40px;text-align:center;font-size:13px;color:rgba(255,255,255,.6);background:var(--forest)}
+
+@media (max-width:760px){
+  .cards{grid-template-columns:1fr;gap:10px}
+  .card{padding:14px 16px;display:grid;grid-template-columns:36px 1fr;column-gap:12px;align-items:start;border-radius:18px}
+  .card .k{width:36px;height:36px;border-radius:11px;margin:0;grid-row:span 2}
+  .card b{font-size:17px;margin-bottom:2px}
+  .card span:not(.k){font-size:14.5px;line-height:1.5}
+  .promise h2{margin-bottom:20px}
+  .checks{gap:8px}.chk{padding:12px 14px}
+  .top .brand b{display:none}
+  .meter{height:64px}
+  .end img{width:88px;margin-bottom:4px}
+  .end p{margin-bottom:16px}
+  .end .btns{flex-direction:column;width:100%;max-width:320px}
+  .end a{padding:14px 20px}
+}
+@media (prefers-reduced-motion:reduce){
+  .reveal{transition:none}.hero .turtle,.end img,.hint i{animation:none}
+}
+</style>
+</head>
+<body>
+<div class="bar" id="bar"></div>
+<header class="top" id="top"><a class="brand" href="#"><img src="/img/wordmark.webp" alt="터틀리"><b>느린학습자 1:1 교육</b></a><a class="cta" href="/#tutors">시작하기</a></header>
+
+<main>
+  <!-- 1. 첫 장면 -->
+  <section class="scene hero" data-len="1.6" data-bg="#FFFFFF" data-fg="#262A20">
+    <div class="stage wrap"><div class="inner">
+      <img class="turtle reveal" data-at="0" src="/img/turtle.webp" alt="가방을 멘 거북이 터틀리">
+      <h1 class="reveal" data-at="0">느려도 끝까지</h1>
+      <p class="reveal" data-at="0">아이 속도에 맞춰 걷는 1:1 선생님, 터틀리</p>
+    </div><div class="hint" id="hint"><span>천천히 내려 보세요</span><i></i></div></div>
+  </section>
+
+  <!-- 2. 문제 제기: 한 줄씩 -->
+  <section class="scene lines" data-len="3" data-bg="#F3F7EE" data-fg="#262A20">
+    <div class="stage wrap"><div class="inner">
+      <p class="eyebrow reveal" data-at=".02">우리 반 이야기</p>
+      <h2 class="reveal" data-at=".08" data-dim=".55">글자는 읽는데</h2>
+      <h2 class="reveal" data-at=".22" data-dim=".55">뜻이 손에 잡히지 않는 아이.</h2>
+      <h2 class="reveal" data-at=".38" data-dim=".75">설명을 한 번 더 들으면</h2>
+      <h2 class="reveal" data-at=".52" data-dim=".75">분명히 해내는 아이.</h2>
+      <h2 class="reveal" data-at=".7"><em>조금 느릴 뿐,</em> 멈춘 게 아니에요.</h2>
+    </div></div>
+  </section>
+
+  <!-- 3. 숫자 -->
+  <section class="scene stat" data-len="2.2" data-bg="#FFFFFF" data-fg="#262A20">
+    <div class="stage wrap"><div class="inner">
+      <p class="eyebrow reveal" data-at=".05">경계선지능 추정 비율</p>
+      <div class="num reveal" data-at=".1"><span data-count="13.59" data-dec="2" data-from=".3" data-to=".6">0</span><small>%</small></div>
+      <p class="reveal" data-at=".55">한 반 25명 중 3명쯤. 그런데 이 아이들의 속도를 아는 선생님을 찾기는 어려워요.</p>
+      <p class="src reveal" data-at=".6">전국 약 697만 명 추정 · 정규분포 기준 IQ 71~84 구간</p>
+    </div></div>
+  </section>
+
+  <!-- 4. 세 가지 약속 + 돌아가는 배경 -->
+  <section class="scene promise" data-len="3" data-bg="#FFFDF7" data-fg="#262A20">
+    <div class="stage wrap"><div class="orb" id="orb"></div><div class="inner">
+      <p class="eyebrow reveal" data-at=".04">그래서 터틀리는</p>
+      <h2 class="reveal" data-at=".1">아이에게 맞는 선생님을<br>천천히, 정확하게 이어요</h2>
+      <div class="cards">
+        <div class="card reveal" data-at=".25"><span class="k">1</span><b>아이로 고르는 매칭</b><span>스펙보다 “이런 아이에게, 이렇게 가르쳐요”를 먼저 보여 드려요.</span></div>
+        <div class="card reveal" data-at=".4"><span class="k">2</span><b>10분 단위 수업</b><span>짧게 나누고, 보고·듣고·손으로 세 번 반복해요.</span></div>
+        <div class="card reveal" data-at=".55"><span class="k">3</span><b>오늘의 한 걸음</b><span>점수 대신, 오늘 해낸 일 한 줄을 보호자와 나눠요.</span></div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 5. 안심 인증 -->
+  <section class="scene safe" data-len="2.6" data-bg="#F3F7EE" data-fg="#262A20">
+    <div class="stage wrap"><div class="inner">
+      <p class="eyebrow reveal" data-at=".04">안심 인증 4단계</p>
+      <h2 class="reveal" data-at=".1">네 가지가 모두 확인돼야<br>목록에 보여요</h2>
+      <div class="checks">
+        <div class="chk reveal" data-at=".22"><span class="o">✓</span><div>본인 확인<small>신분증으로 본인인지 확인해요</small></div></div>
+        <div class="chk reveal" data-at=".34"><span class="o">✓</span><div>성범죄·아동학대 경력 조회<small>경찰서 회신서로 확인해요</small></div></div>
+        <div class="chk reveal" data-at=".46"><span class="o">✓</span><div>개인과외교습자 신고<small>교육청 신고를 확인해요</small></div></div>
+        <div class="chk reveal" data-at=".58"><span class="o">✓</span><div>자격·경력 증빙<small>자격증과 경력을 확인해요</small></div></div>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- 6. 돈의 흐름 -->
+  <section class="scene split" data-len="2.2" data-bg="#FFF1CF" data-fg="#262A20">
+    <div class="stage wrap"><div class="inner">
+      <p class="eyebrow reveal" data-at=".04">투명한 수업료</p>
+      <h2 class="reveal" data-at=".1">수업료의 80%는<br>선생님께 가요</h2>
+      <div class="meter reveal" data-at=".5" id="meter"><i class="a">80%</i><i class="b">20%</i></div>
+      <div class="legend reveal" data-at=".62"><span><b>선생님 정산</b><br>수업 완료 확인 뒤 지급</span><span style="text-align:right"><b>안전거래 · 매칭 운영</b><br>결제 보관, 환불 보장</span></div>
+    </div></div>
+  </section>
+
+  <!-- 7. 마무리 -->
+  <section class="scene end" data-len="1.4" data-bg="#1F3D1C" data-fg="#FFFFFF">
+    <div class="stage wrap"><div class="inner">
+      <img class="reveal" data-at=".05" src="/img/turtle.webp" alt="">
+      <h2 class="reveal" data-at=".1">아이 속도에 맞춰,<br>끝까지 함께</h2>
+      <p class="reveal" data-at=".2">첫 상담은 무료예요. 15분 이야기해 보고 결정해도 돼요.</p>
+      <div class="btns reveal" data-at=".28"><a class="p" href="/#tutors">선생님 찾아보기</a><a class="g" href="/#signup">선생님으로 함께하기</a></div>
+    </div></div>
+  </section>
+</main>
+<footer class="wrap">터틀리 · 느린학습자 맞춤형 1:1 교육 플랫폼 (데모)</footer>
+
+<script>
+(function () {
+  var scenes = [].slice.call(document.querySelectorAll('.scene'));
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var bar = document.getElementById('bar'), top = document.getElementById('top'), hint = document.getElementById('hint'), orb = document.getElementById('orb'), meter = document.getElementById('meter');
+  // 장면 길이: data-len × 화면 높이
+  function size() { scenes.forEach(function (s) { s.style.height = (parseFloat(s.dataset.len || 1) * innerHeight) + 'px'; }); }
+  function hex(h) { h = h.replace('#', ''); return [0, 2, 4].map(function (i) { return parseInt(h.substr(i, 2), 16); }); }
+  function mix(a, b, t) { var x = hex(a), y = hex(b); return 'rgb(' + x.map(function (v, i) { return Math.round(v + (y[i] - v) * t); }).join(',') + ')'; }
+  function clamp(v) { return Math.max(0, Math.min(1, v)); }
+  function frame() {
+    var vh = innerHeight, y = scrollY, doc = document.documentElement.scrollHeight - vh;
+    bar.style.width = (doc > 0 ? y / doc * 100 : 0) + '%';
+    top.classList.toggle('solid', y > 40);
+    if (hint) hint.style.opacity = String(clamp(1 - y / (vh * .4)));
+    scenes.forEach(function (s, i) {
+      // 진행도: 장면 윗변이 화면 85% 지점에 들어올 때 0 → 장면이 거의 끝날 때 1 (장면 사이에 빈 화면이 없게)
+      var r = s.getBoundingClientRect(); var p = clamp((vh * .85 - r.top) / Math.max(1, s.offsetHeight - vh * .35));
+      if (reduce) p = r.top < vh ? 1 : 0;
+      // 바탕색: 이 장면이 화면을 덮고 있으면 이 장면 색, 다음 장면이 아래서 올라오면 그 색으로 섞어요
+      if (r.top <= vh * .5 && r.bottom > vh * .5) {
+        var next = scenes[i + 1]; var t = next ? clamp((vh - next.getBoundingClientRect().top) / vh) : 0;
+        var bg = next ? mix(s.dataset.bg, next.dataset.bg, t) : s.dataset.bg; var fgT = next && t > .5 ? next.dataset.fg : s.dataset.fg;
+        document.body.style.background = bg; document.body.style.color = fgT;
+        document.querySelector('meta[name=theme-color]') && document.querySelector('meta[name=theme-color]').setAttribute('content', bg);
+      }
+      s.querySelectorAll('.reveal').forEach(function (el) {
+        var at = parseFloat(el.dataset.at || 0); var on = p >= at && r.bottom > vh * .15;
+        el.classList.toggle('on', on);
+        if (el.dataset.dim) el.classList.toggle('past', p >= parseFloat(el.dataset.dim));
+        if (el.classList.contains('chk')) el.classList.toggle('on', on);
+      });
+      s.querySelectorAll('[data-count]').forEach(function (el) {
+        var a = parseFloat(el.dataset.from), b = parseFloat(el.dataset.to); var t = reduce ? 1 : clamp((p - a) / (b - a)); t = 1 - Math.pow(1 - t, 3);
+        el.textContent = (parseFloat(el.dataset.count) * t).toFixed(+el.dataset.dec || 0);
+      });
+      if (s.classList.contains('promise') && orb) orb.style.setProperty('--rot', (p * 300 + (Date.now() / 120) % 360) + 'deg');
+    });
+    if (meter) { var on = meter.classList.contains('on'); meter.children[0].style.width = on ? '80%' : '0'; meter.children[1].style.width = on ? '20%' : '0'; }
+  }
+  var ticking = false;
+  function req() { if (!ticking) { ticking = true; requestAnimationFrame(function () { ticking = false; frame(); }); } }
+  addEventListener('scroll', req, { passive: true });
+  addEventListener('resize', function () { size(); req(); });
+  // 배경 원은 스크롤하지 않아도 천천히 돌아요
+  if (!reduce) setInterval(function () { var s = document.querySelector('.promise'); var r = s.getBoundingClientRect(); if (r.top < innerHeight && r.bottom > 0) frame(); }, 50);
+  size(); frame();
+})();
+</script>
+</body>
+</html>
