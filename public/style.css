@@ -13,13 +13,13 @@ TYPE   : 프리텐다드 본문, 발표자료 손글씨(나눔손글씨 펜)는 
   color-scheme:light;
   --bg:#FFFEFB;
   --group:#FFFEFB;
-  --cell:#F7F4EC;
-  --cell2:#EFEADF;
-  --card-line:#ECE6DA;
+  --cell:#FAF8F3;
+  --cell2:#F2EEE6;
+  --card-line:#EFEBE2;
   --ink:#262A20;
   --ink2:#3E4434;
   --muted:#6D6F62;
-  --sep:#ECE7DC;
+  --sep:#EFEBE3;
   --tint:#3D7B35;
   --tint-ink:#FFFFFF;
   --tint-soft:#EAF2DE;
@@ -425,15 +425,16 @@ input[type=range]{width:100%;accent-color:var(--tint);min-height:32px}
 .steps li::before{content:counter(s);width:30px;height:30px;border-radius:50%;background:#fff;color:var(--tint-text);display:grid;place-items:center;font-weight:700}
 
 /* ---------- 웰컴·로그인 ---------- */
-.welcome{min-height:100%;display:flex;flex-direction:column;padding:30px 24px 24px;background:var(--group)}
-.welcome .art{flex:1;display:grid;place-items:center;align-content:center;text-align:center;gap:6px}
-.welcome .art img.tt{width:230px;animation:walk 3.2s ease-in-out infinite}
+.welcome{min-height:100%;display:flex;flex-direction:column;padding:40px 28px 36px;background:var(--group)}
+.view>.vin>.welcome{flex:1}
+.welcome .art{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:0;padding:12px 0 8px}
+.welcome .art img.tt{width:min(200px,52%);margin-bottom:22px;animation:walk 3.2s ease-in-out infinite}
 @keyframes walk{0%,100%{transform:translateX(-6px) rotate(-2deg)}50%{transform:translateX(6px) rotate(2deg)}}
-.welcome .art img.wm{width:150px;margin:8px auto 0}
-.welcome .art .hand{font-size:42px;color:var(--ink);margin:4px 0 0}
-.welcome .art p{color:var(--ink2);margin:6px 0 0;font-size:15.5px}
-.welcome .acts{display:grid;gap:10px}
-.road{height:16px;margin:8px -24px 18px;background:repeating-linear-gradient(90deg,#B9AE9A 0 22px,transparent 22px 40px) center/100% 3px no-repeat,var(--cell)}
+.welcome .art img.wm{width:132px;margin:0 auto}
+.welcome .art .hand{font-size:36px;color:var(--ink);margin:14px 0 0;line-height:1.2}
+.welcome .art p{color:var(--ink2);margin:10px 0 0;font-size:15.5px}
+.welcome .acts{display:grid;gap:12px;width:100%;max-width:420px;margin:0 auto}
+.road{height:12px;margin:28px -28px 32px;background:repeating-linear-gradient(90deg,#CFC6B5 0 18px,transparent 18px 34px) center/100% 2px no-repeat}
 .demo3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .demo3 button{border:0;background:var(--cell);border-radius:14px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:13.5px;font-weight:600;min-height:84px}
 .demo3 button:active{transform:scale(.96)}
@@ -582,8 +583,11 @@ input[type=range]{width:100%;accent-color:var(--tint);min-height:32px}
   .me{margin-bottom:18px}
   .bub{max-width:72%}
   .done img{width:190px}
-  .welcome .art img.tt{width:260px}
-  .welcome .art img.wm{width:170px}
+  .welcome{padding:56px 40px 48px}
+  .welcome .art img.tt{width:240px;margin-bottom:28px}
+  .welcome .art img.wm{width:156px}
+  .welcome .art .hand{font-size:40px;margin-top:18px}
+  .road{margin:36px -40px 40px}
   .welcome .acts{max-width:520px;width:100%;margin:0 auto}
   .sheet{left:50%;right:auto;width:min(520px,96%);transform:translate(-50%,100%);border-radius:18px 18px 0 0}
   .sheet.on{transform:translate(-50%,0)}
