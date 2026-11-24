@@ -91,15 +91,14 @@ function ask(title, text, okLabel, onOk, danger = false) {
 }
 function needLogin(msg = '로그인하면 이용할 수 있어요.') { toast(msg); go('me'); }
 const go = name => { if (location.hash === '#' + name) router(); else location.hash = name; };
-const emptyState = (text, btn = '') => `<div class="empty"><img src="/turtle.svg" alt=""/>${text}${btn}</div>`;
+const emptyState = (text, btn = '') => `<div class="empty"><img src="/img/turtle-sm.webp" alt=""/>${text}${btn}</div>`;
 
 // ───────────── 라우터 / 상단바 ─────────────
 const TITLES = { home: '홈', tutors: '튜터 찾기', community: '커뮤니티', library: 'e-도서관', me: '마이' };
 const routes = { home: renderHome, tutors: renderTutors, community: renderCommunity, library: renderLibrary, me: renderMe };
-let firstLoad = true;
 
 function setTop(name, action = '') {
-  $('#topLeft').innerHTML = name === 'home' ? `<a class="logo" href="#home"><img src="/turtle.svg" alt="" /><span>터틀리</span></a>` : '';
+  $('#topLeft').innerHTML = name === 'home' ? `<a class="logo" href="#home" aria-label="터틀리 홈"><img src="/turtle.svg" alt="" /><img class="wm" src="/img/wordmark.webp" alt="터틀리" /></a>` : '';
   $('#topTitle').textContent = name === 'home' ? '' : TITLES[name];
   $('#topAction').innerHTML = action;
 }
@@ -120,26 +119,10 @@ async function router() {
   catch (e) { view.innerHTML = emptyState(esc(e.message)); }
   view.scrollTop = 0;
   $('#topbar').classList.remove('scrolled');
-  firstLoad = false;
 }
 window.addEventListener('hashchange', router);
 
 // ───────────── 홈 ─────────────
-function notebook() {
-  const lines = ['오늘도 우리는', '한 걸음!'];
-  let n = 0;
-  const cells = lines.map((l, li) => {
-    const chars = [...l];
-    while (chars.length < 7) chars.push('');
-    return chars.map((c, i) => {
-      const last = li === 1 && i === 6;
-      const inner = last ? `<i>${icon('check')}</i>` : `<i>${c === ' ' ? '' : esc(c)}</i>`;
-      return `<span class="${last ? 'check' : ''}" style="--n:${n++}">${inner}</span>`;
-    }).join('');
-  }).join('');
-  return `<span class="sr">오늘도 우리는 한 걸음!</span><div class="cells ${firstLoad ? 'write' : ''}" aria-hidden="true">${cells}</div>`;
-}
-
 async function renderHome() {
   const u = state.user;
   const isTutor = u?.role === 'tutor';
@@ -154,8 +137,9 @@ async function renderHome() {
 
   view.innerHTML = `
     <div class="hero" style="margin-top:10px">
-      <h1 class="greet">${u ? `${esc(shortName(u.name))}님, 안녕하세요` : '터틀리에 오신 걸 환영해요'}</h1>
-      ${notebook()}
+      <p class="who">${u ? `${esc(shortName(u.name))}님, 안녕하세요` : '터틀리에 오신 걸 환영해요'}</p>
+      <h1 class="cheer">오늘도 우리는<br/>한 걸음!</h1>
+      <img class="tt" src="/img/turtle.webp" alt="" width="425" height="365" />
       <div class="cta">
         ${isTutor ? `<a class="btn" href="#me">받은 신청${active.length ? ` ${active.length}건` : ''}</a>` : `<a class="btn" href="#tutors">튜터 찾기</a>`}
         <a class="btn tint" href="#community">커뮤니티</a>
@@ -417,7 +401,7 @@ function bindPosts(g) {
 let libCat = '';
 async function renderLibrary() {
   const { items } = await api('/library' + (libCat ? '?category=' + encodeURIComponent(libCat) : ''));
-  const kind = it => `<span class="avatar" style="border-radius:14px;background:var(--bg);color:var(--accent-press)"><svg class="i" viewBox="0 0 24 24" aria-hidden="true">${KIND[it.type] || KIND.card}</svg></span>`;
+  const kind = it => `<span class="avatar" style="border-radius:14px;background:var(--inset);color:var(--accent-press)"><svg class="i" viewBox="0 0 24 24" aria-hidden="true">${KIND[it.type] || KIND.card}</svg></span>`;
   view.innerHTML = `
     ${large('e-도서관', '보고, 듣고, 따라 하는 학습 자료예요.')}
     <div class="chips" aria-label="과목">${['', '국어', '수학', '사회성', '생활습관'].map(c => `<button data-c="${c}" class="${libCat === c ? 'on' : ''}" aria-pressed="${libCat === c}">${c || '전체'}</button>`).join('')}</div>

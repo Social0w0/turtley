@@ -41,7 +41,7 @@ function pretendardDataUri() {
   return 'data:font/woff2;base64,' + buf.toString('base64');
 }
 const fonts = '<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
-  + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap">'
+  + '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&display=swap">'
   + `<style>@font-face{font-family:'Pretendard Variable';font-weight:45 920;font-style:normal;font-display:swap;src:url(${pretendardDataUri()}) format('woff2-variations')}</style>`;
 const safe = s => s.replace(/<\/script/gi, '<\\/script');
 
@@ -56,6 +56,11 @@ let html = read('public/index.html')
   .replace('<title>터틀리 · 느린학습자 맞춤형 1:1 교육 플랫폼</title>', '<title>터틀리 미리보기</title>')
   .replace('<p class="pitch-demo">', '<p class="pitch-demo">서버 없이 도는 미리보기예요. 새로고침하면 처음 상태로 돌아가요.<br/>');
 
+// 그림(public/img/*.webp)도 파일 안에 넣기
+for (const f of fs.readdirSync(path.join(root, 'public/img'))) {
+  const uri = 'data:image/webp;base64,' + fs.readFileSync(path.join(root, 'public/img', f)).toString('base64');
+  html = html.replaceAll('/img/' + f, uri);
+}
 if (!html.startsWith('<!DOCTYPE')) html = html.replace(/^<!doctype html>/i, '<!DOCTYPE html>');
 fs.mkdirSync(path.join(root, 'preview'), { recursive: true });
 fs.writeFileSync(path.join(root, 'preview', 'index.html'), html);
