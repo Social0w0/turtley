@@ -167,7 +167,7 @@ a.next{color:var(--ink)}
 .btn.danger{background:var(--red-soft);color:var(--red)}
 .linkbtn{border:0;background:none;color:var(--muted);font-size:15px;padding:10px 4px;min-height:44px;font-weight:500}
 
-.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 16px 4px;scrollbar-width:none;scroll-snap-type:x proximity}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 16px 4px;scrollbar-width:none;scroll-snap-type:x proximity;scroll-padding-inline:16px}
 .chips::-webkit-scrollbar{display:none}
 .chips.wrap{flex-wrap:wrap;overflow:visible;padding:0}
 .chip{flex:none;display:inline-flex;align-items:center;gap:6px;border:1px solid transparent;background:var(--cell);color:var(--ink2);border-radius:999px;min-height:38px;padding:0 14px;font-size:14.5px;font-weight:500;scroll-snap-align:start;white-space:nowrap}
@@ -272,7 +272,7 @@ textarea.in{padding:12px 14px;min-height:96px;resize:vertical;line-height:1.5}
 .entry .ei{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;margin-bottom:10px}
 .entry b{font-size:17px;letter-spacing:-.01em;display:block;line-height:1.3}
 .entry small{color:var(--muted);font-size:13px;line-height:1.4;display:block;margin-top:4px}
-.hs{display:flex;gap:10px;overflow-x:auto;padding:0 16px 4px;scroll-snap-type:x mandatory;scrollbar-width:none}
+.hs{display:flex;gap:10px;overflow-x:auto;padding:0 16px 4px;scroll-snap-type:x mandatory;scrollbar-width:none;scroll-padding-inline:16px}
 .hs::-webkit-scrollbar{display:none}
 .hs>*{scroll-snap-align:start;flex:none}
 .tcard-s{width:200px;border:0;text-align:left;background:var(--cell);border-radius:18px;padding:14px;transition:transform .2s}
@@ -570,12 +570,12 @@ input[type=range]{width:100%;accent-color:var(--tint);min-height:32px}
 /* ---------- iPad 폭 레이아웃 (논리 폭 640px 이상) ---------- */
 @media (min-width:760px){
   .sec{padding:0 20px}
-  .chips{padding:2px 20px 4px}
+  .chips{padding:2px 20px 4px;scroll-padding-inline:20px}
   .searchbtn{width:calc(100% - 40px);margin:0 20px 18px}
   .search,.seg{margin-left:20px;margin-right:20px}
   .lgrid{padding:0 20px}
   .tcard-s{width:228px}
-  .hs{padding:0 20px 4px}
+  .hs{padding:0 20px 4px;scroll-padding-inline:20px}
   .lesson{margin:0 20px 10px;width:calc(100% - 40px)}
   .mon{padding:6px 24px 6px}
   .kpi,.me{margin-left:20px;margin-right:20px}
